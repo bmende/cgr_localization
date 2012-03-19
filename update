@@ -1,0 +1,25 @@
+#!/bin/bash
+
+svn export svn+ssh://joydeepb@neontetra.coral.cs.cmu.edu/svn/shared src/shared
+svn export svn+ssh://joydeepb@neontetra.coral.cs.cmu.edu/svn/cobot/trunk/cobot_linux/src/libraries/Eigen3 src/libraries/Eigen3
+
+mkdir src/cgr
+svn export svn+ssh://joydeepb@neontetra.coral.cs.cmu.edu/svn/cobot/trunk/cobot_linux/src/vector_localization/vectorparticlefilter.h src/cgr/vectorparticlefilter.h
+#svn export svn+ssh://joydeepb@neontetra.coral.cs.cmu.edu/svn/cobot/trunk/cobot_linux/src/vector_localization/pre_render.cpp src/cgr/pre_render.cpp
+svn export svn+ssh://joydeepb@neontetra.coral.cs.cmu.edu/svn/cobot/trunk/cobot_linux/src/vector_localization/vectorparticlefilter.cpp src/cgr/vectorparticlefilter.cpp
+
+mkdir src/map
+svn export svn+ssh://joydeepb@neontetra.coral.cs.cmu.edu/svn/cobot/trunk/cobot_linux/src/map/vector_map.h src/map/vector_map.h
+svn export svn+ssh://joydeepb@neontetra.coral.cs.cmu.edu/svn/cobot/trunk/cobot_linux/src/map/vector_map.cpp src/map/vector_map.cpp
+
+mkdir src/fspf
+#svn export svn+ssh://joydeepb@neontetra.coral.cs.cmu.edu/svn/cobot/trunk/cobot_linux/src/kinect/lib src/kinect/lib
+#svn export svn+ssh://joydeepb@neontetra.coral.cs.cmu.edu/svn/cobot/trunk/cobot_linux/src/kinect/Modules src/kinect/modules
+#svn export svn+ssh://joydeepb@neontetra.coral.cs.cmu.edu/svn/cobot/trunk/cobot_linux/src/kinect/include src/kinect/include
+svn export svn+ssh://joydeepb@neontetra.coral.cs.cmu.edu/svn/cobot/trunk/cobot_linux/src/kinect/kinect_main.cpp src/kinect/kinect_main.cpp
+svn export svn+ssh://joydeepb@neontetra.coral.cs.cmu.edu/svn/cobot/trunk/cobot_linux/src/kinect/plane_filtering.h src/fspf/plane_filtering.h
+svn export svn+ssh://joydeepb@neontetra.coral.cs.cmu.edu/svn/cobot/trunk/cobot_linux/src/kinect/plane_filtering.cpp src/fspf/plane_filtering.cpp
+svn export svn+ssh://joydeepb@neontetra.coral.cs.cmu.edu/svn/cobot/trunk/cobot_linux/src/kinect/grahams_scan.cpp src/fspf/grahams_scan.cpp
+svn export svn+ssh://joydeepb@neontetra.coral.cs.cmu.edu/svn/cobot/trunk/cobot_linux/src/kinect/grahams_scan.h src/fspf/grahams_scan.h
+svn export svn+ssh://joydeepb@neontetra.coral.cs.cmu.edu/svn/cobot/trunk/cobot_linux/src/map/plane_polygon.cpp src/fspf/plane_polygon.cpp
+svn export svn+ssh://joydeepb@neontetra.coral.cs.cmu.edu/svn/cobot/trunk/cobot_linux/src/map/plane_polygon.h src/fspf/plane_polygon.h
