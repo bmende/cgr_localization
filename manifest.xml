@@ -1,7 +1,7 @@
 <package>
   <description brief="cobot_linux">
 
-     CoBot Software stack
+     CGR Localization
 
   </description>
   <author>Joydeep Biswas</author>
@@ -13,8 +13,6 @@
   <depend package="sensor_msgs"/>
   <depend package="rospy"/>
   <depend package="roscpp"/>
-  <depend package="cobot_msgs"/>
-  <depend package="evid70_camera"/>
   <depend package="visualization_msgs"/>
   <depend package="tf"/>
 

@@ -20,6 +20,8 @@ IF( ROS_ROOT )
   message (STATUS "ROS installation detected.")
   include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
   rosbuild_init()
+  rosbuild_gensrv()
+  rosbuild_genmsg()
 ELSE( ROS_ROOT )
   message (STATUS "ROS not installed.")
 ENDIF( ROS_ROOT )
@@ -107,6 +109,10 @@ set (FSPF_SRCS
   src/fspf/grahams_scan.cpp
 )
 
+qt4_wrap_cpp(GUI_MOC_SRCS
+  src/gui/vector_display.h
+)
+
 #======================================================================================================
 #Creating libraries to eliminate redundant compile steps
 
@@ -142,6 +148,11 @@ IF(ROS_ROOT)
   rosbuild_add_executable(${target} src/kinect/kinect_main.cpp )
   add_dependencies(${target} shared_libraries lib_freenect fspf_libraries rosbuild_precompile)
   target_link_libraries(${target} shared_libraries lib_freenect fspf_libraries ${libs})
+  
+  set (target localization_gui)
+  rosbuild_add_executable(${target} src/gui/vector_display_main.cpp src/gui/vector_display.cpp ${GUI_MOC_SRCS})
+  add_dependencies(${target} shared_libraries rosbuild_precompile map_libraries)
+  target_link_libraries(${target} shared_libraries map_libraries ${QT_LIBRARIES} ${libs})
 ENDIF(ROS_ROOT)
 
 set (target pre_render)

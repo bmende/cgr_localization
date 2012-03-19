@@ -227,10 +227,7 @@ int kinect_main()
     if(debugLevel>=0) printf("Ready.\n"); fflush(stdout);
   }
   
-
   captureReady = true;
-  
-  double tLastIMUPublish = 0.0;
   
   while(run && freenect_process_events(f_ctx) >= 0 && ros::ok()){
     

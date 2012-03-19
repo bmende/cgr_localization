@@ -25,21 +25,20 @@
 #include <string.h>
 
 #include <ros/ros.h>
-#include <ros/package.h>
 #include <tf/tf.h>
+#include "sensor_msgs/LaserScan.h"
+#include "sensor_msgs/Image.h"
+#include "nav_msgs/Odometry.h"
 
 #include "vectorparticlefilter.h"
 #include "vector_map.h"
 #include "popt_pp.h"
 #include "terminal_utils.h"
 #include "timer.h"
-#include "sensor_msgs/LaserScan.h"
-#include "sensor_msgs/Image.h"
-#include "nav_msgs/Odometry.h"
 #include "proghelp.h"
-#include "cobot_msgs/LidarDisplayMsg.h"
-#include "cobot_msgs/CobotRemoteInterfaceSrv.h"
-#include "cobot_msgs/CobotLocalizationMsg.h"
+#include "cgr_localization/DisplayMsg.h"
+#include "cgr_localization/LocalizationInterfaceSrv.h"
+#include "cgr_localization/LocalizationMsg.h"
 #include "configreader.h"
 #include "plane_filtering.h"
 
@@ -58,13 +57,13 @@ float locUncertainty, angleUncertainty;
 VectorLocalization2D *localization;
 
 using namespace ros;
-using namespace cobot_msgs;
+using namespace cgr_localization;
 Publisher guiPublisher;
 Publisher localizationPublisher;
 Publisher filteredPointCloudPublisher;
 ServiceServer localizationServer;
 
-LidarDisplayMsg guiMsg;
+DisplayMsg guiMsg;
 
 VectorLocalization2D::PointCloudParams pointCloudParams;
 VectorLocalization2D::LidarParams lidarParams;
@@ -91,17 +90,11 @@ void lidarCallback(const sensor_msgs::LaserScan& msg);
 void depthCallback(const sensor_msgs::Image& msg);
 void publishLocation(bool limitRate=true);
 
-bool localizationCallback(CobotRemoteInterfaceSrv::Request& req, CobotRemoteInterfaceSrv::Response& res)
-{
-  static const unsigned int CmdSetLocation = 0x0002;
-  
-  if(debugLevel>0) printf("RemoteCommand num:%d type:0x%02X\n",req.command_num,req.command_type);
-  
-  if(req.command_type & CmdSetLocation){
-    vector2f loc(req.loc_x, req.loc_y);
-    if(debugLevel>0) printf("Setting location: %f %f %f\u00b0 on %s\n",V2COMP(loc),DEG(req.orientation),req.map.c_str());
-    localization->setLocation(loc, req.orientation,req.map.c_str(),0.5,DEG(5.0));
-  }
+bool localizationCallback(LocalizationInterfaceSrv::Request& req, LocalizationInterfaceSrv::Response& res)
+{  
+  vector2f loc(req.loc_x, req.loc_y);
+  if(debugLevel>0) printf("Setting location: %f %f %f\u00b0 on %s\n",V2COMP(loc),DEG(req.orientation),req.map.c_str());
+  localization->setLocation(loc, req.orientation,req.map.c_str(),0.5,DEG(5.0));
   
   return true;
 }
@@ -140,7 +133,7 @@ void publishLocation(bool limitRate)
   if(GetTimeSec()-tLast<0.03 && limitRate)
     return;
   tLast = GetTimeSec();
-  CobotLocalizationMsg msg;
+  LocalizationMsg msg;
   localization->computeLocation(curLoc, curAngle);
   msg.timeStamp = GetTimeSec();
   msg.x = curLoc.x;
@@ -191,7 +184,7 @@ void publishGUI()
 void LoadParameters()
 {
   WatchFiles watch_files;
-  ConfigReader config(ros::package::getPath("cobot_linux").append("/").c_str());
+  ConfigReader config("./");
   
   config.init(watch_files);
   
@@ -516,7 +509,7 @@ int main(int argc, char** argv)
   srand(seed);
   
   //Initialize particle filter, sensor model, motion model, refine model
-  string mapsFolder = ros::package::getPath("cobot_linux").append("/../maps");
+  string mapsFolder("./maps");
   localization = new VectorLocalization2D(mapsFolder.c_str());
   InitModels();
   
@@ -527,8 +520,8 @@ int main(int argc, char** argv)
   InitHandleStop(&run);
   ros::init(argc, argv, "CGR_Localization");
   ros::NodeHandle n;
-  guiPublisher = n.advertise<LidarDisplayMsg>("localization_gui",1,true);
-  localizationPublisher = n.advertise<CobotLocalizationMsg>("localization",1,true);
+  guiPublisher = n.advertise<DisplayMsg>("localization_gui",1,true);
+  localizationPublisher = n.advertise<LocalizationMsg>("localization",1,true);
   Sleep(0.1);
   
   localizationServer = n.advertiseService("localization_interface", &localizationCallback);
