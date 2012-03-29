@@ -515,7 +515,7 @@ vector<line2f> VectorMap::sceneRender(vector2f loc, float a0, float a1)
   static const float eps = 0.001;
   static const float MinRange = 0.03;
   static const float MaxRange = 5.0;
-  static const unsigned int MaxLines = 1000;
+  static const unsigned int MaxLines = 200;
   
   vector2f leftMargin, rightMargin;
   rightMargin.heading(a0);
@@ -563,7 +563,7 @@ vector<line2f> VectorMap::sceneRender(vector2f loc, float a0, float a1)
   if(linesList.size()>=MaxLines){
     char buf[2048];
     sprintf(buf,"Runaway Analytic Scene Render at %.30f,%.30f, %.3f : %.3f\u00b0",V2COMP(loc),DEG(a0),DEG(a1));
-    TerminalWarning(buf);
+    //TerminalWarning(buf);
   }
   for(i=0; i<scene.size(); i++){
     if(scene[i].Length()>eps)

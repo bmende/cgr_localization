@@ -20,8 +20,8 @@
 //========================================================================
 
 #include "geometry.h"
-#include "Eigen3/Dense"
-#include "Eigen3/Geometry"
+#include <eigen3/Eigen/Dense>
+#include <eigen3/Eigen/Geometry>
 
 #ifndef QUATERNION_HELPER_H
 #define QUATERNION_HELPER_H

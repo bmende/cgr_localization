@@ -24,6 +24,7 @@
 
 #include "stdio.h"
 #include <vector>
+#include <map>
 #include "vector_map.h"
 #include <eigen3/Eigen/Dense>
 #include "geometry.h"
@@ -79,7 +80,8 @@ public:
     float minRange;
     float maxRange;
     int minPoints;
-    vector2f laserLoc;
+    Vector2f laserToBaseTrans;
+    Matrix2f laserToBaseRot;
     vector<Vector2f> scanHeadings;
     
     int numSteps;
@@ -201,7 +203,7 @@ public:
   /// Refine proposal distribution based on LIDAR observations
   void refineLidar(const VectorLocalization2D::LidarParams& lidarParams);
   /// Refine proposal distribution based on Point Cloud observations
-  void refinePointCloud(vector< vector2f >& pointCloud, vector< vector2f >& pointNormals, const VectorLocalization2D::PointCloudParams& pointCloudParams);
+  void refinePointCloud(const vector<vector2f>& pointCloud, const vector< vector2f >& pointNormals, const VectorLocalization2D::PointCloudParams& pointCloudParams);
   /// Update distribution based on LIDAR observations
   void updateLidar(const VectorLocalization2D::LidarParams& lidarParams, const VectorLocalization2D::MotionModelParams& motionParams);
   /// Update distribution based on Point Cloud observations
@@ -212,18 +214,18 @@ public:
   /// Predict particle motion by sampling from the motion model
   void predictParticle(Particle2D& p, float dx, float dy, float dtheta, const VectorLocalization2D::MotionModelParams& motionParams);
   /// Refine a single location hypothesis based on a LIDAR observation
-  void refineLocationLidar(vector2f& loc, float& angle, float& initialWeight, float& finalWeight, const VectorLocalization2D::LidarParams& lidarParams);
+  void refineLocationLidar(vector2f& loc, float& angle, float& initialWeight, float& finalWeight, const VectorLocalization2D::LidarParams& lidarParams, const std::vector< Vector2f >& laserPoints);
   /// Refine a single location hypothesis based on a Point Cloud observation
-  void refineLocationPointCloud(vector2f& loc, float& angle, float& initialWeight, float& finalWeight, vector< vector2f >& pointCloud, vector< vector2f >& pointNormals, const VectorLocalization2D::PointCloudParams& pointCloudParams);
+  void refineLocationPointCloud(vector2f& loc, float& angle, float& initialWeight, float& finalWeight, const vector< vector2f >& pointCloud, const vector< vector2f >& pointNormals, const VectorLocalization2D::PointCloudParams& pointCloudParams);
   
   void computeParticleWeights(vector2f deltaLoc, float deltaAngle, vector2f minLocStdDev, float minAngleStdDev, const VectorLocalization2D::MotionModelParams& motionParams);
   
   /// Attractor function used for refining location hypotheses 
   inline Vector2f attractorFunction(line2f l, Vector2f p, float attractorRange, float margin = 0);
   /// Gradient based on pointCloud observation
-  void getPointCloudGradient(vector2f loc, float angle, vector2f& locGrad, float& angleGrad, vector< vector2f >& pointCloud, vector< vector2f >& pointNormals, float& logWeight, const VectorLocalization2D::PointCloudParams& pointCloudParams);
+  void getPointCloudGradient(vector2f loc, float angle, vector2f& locGrad, float& angleGrad, const vector< vector2f >& pointCloud, const vector< vector2f >& pointNormals, float& logWeight, const VectorLocalization2D::PointCloudParams& pointCloudParams);
   /// Gradient based on LIDAR observation
-  void getLidarGradient(vector2f loc, float angle, vector2f& locGrad, float& angleGrad, float& logWeight, VectorLocalization2D::LidarParams lidarParams);
+  void getLidarGradient(vector2f loc, float angle, vector2f& locGrad, float& angleGrad, float& logWeight, VectorLocalization2D::LidarParams lidarParams, const vector< Vector2f >& laserPoints);
   /// Observation likelihood based on LIDAR obhservation
   float observationWeightLidar(vector2f loc, float angle, const VectorLocalization2D::LidarParams& lidarParams);
   /// Observation likelihood based on point cloud obhservation
@@ -258,6 +260,8 @@ public:
   void getEvalValues(EvalValues &_laserEval, EvalValues &_pointCloudEval);
   /// Return angle and location uncertainties
   void getUncertainty(float &_angleUnc, float &_locUnc);
+  /// Removes duplicate points with the same observation angle and range
+  void reducePointCloud(const vector< vector2f >& pointCloud, const vector< vector2f >& pointNormals, vector< vector2f >& reducedPointCloud, vector< vector2f >& reducedPointNormals);
 };
 
 #endif //VECTORPARTICLEFILTER_H

@@ -14,7 +14,7 @@
 //========================================================================
 /*!
 * \file    localization_main.cpp
-* \brief   Main Vector Localization test program for Cobot
+* \brief   Main Vector Localization program
 * \author  Joydeep Biswas, (C) 2010
 */
 //========================================================================
@@ -26,6 +26,7 @@
 
 #include <ros/ros.h>
 #include <tf/tf.h>
+#include <tf/transform_listener.h>
 #include "sensor_msgs/LaserScan.h"
 #include "sensor_msgs/Image.h"
 #include "nav_msgs/Odometry.h"
@@ -62,7 +63,7 @@ Publisher guiPublisher;
 Publisher localizationPublisher;
 Publisher filteredPointCloudPublisher;
 ServiceServer localizationServer;
-
+tf::TransformListener* tfListener;
 DisplayMsg guiMsg;
 
 VectorLocalization2D::PointCloudParams pointCloudParams;
@@ -288,7 +289,16 @@ void LoadParameters()
     error = error || !c.getReal("minRange", lidarParams.minRange);
     
     // Pose of laser sensor on robot
-    error = error || !c.getVec2f<vector2f>("laserLoc", lidarParams.laserLoc);
+    vector2f laserToBaseTrans;
+    float xRot, yRot, zRot;
+    error = error || !c.getVec2f<vector2f>("laserToBaseTrans", laserToBaseTrans);
+    error = error || !c.getReal("xRot", xRot);
+    error = error || !c.getReal("yRot", yRot);
+    error = error || !c.getReal("zRot", zRot);
+    Matrix3f laserToBaseRot;
+    laserToBaseRot = AngleAxisf(xRot, Vector3f::UnitX()) * AngleAxisf(yRot, Vector3f::UnitY()) * AngleAxisf(zRot, Vector3f::UnitZ());
+    lidarParams.laserToBaseTrans = Vector2f(V2COMP(laserToBaseTrans));
+    lidarParams.laserToBaseRot = laserToBaseRot.block(0,0,2,2);
     
     // Parameters related to observation update
     error = error || !c.getReal("logObstacleProb", lidarParams.logObstacleProb);
@@ -393,6 +403,13 @@ void lidarCallback(const sensor_msgs::LaserScan &msg)
     printf("LIDAR n:%d t:%f noLidar:%d\n",(int) msg.ranges.size(), msg.scan_time, noLidar?1:0);
   }
   
+  tf::StampedTransform baseLinkToLaser;
+  tfListener->lookupTransform(msg.header.frame_id, "base_link", ros::Time::now(), baseLinkToLaser);
+  tf::Vector3 translationTf = baseLinkToLaser.getOrigin();
+  tf::Quaternion rotationTf = baseLinkToLaser.getRotation();
+  
+  Quaternionf rot(rotationTf.w(), rotationTf.x(), rotationTf.y(), rotationTf.z());
+  Vector3f trans(translationTf.x(), translationTf.y(), translationTf.z());
   
   if(int(msg.ranges.size()) != lidarParams.numRays){
     TerminalWarning("Incorrect number of Laser Scan rays!");
@@ -529,6 +546,8 @@ int main(int argc, char** argv)
   //Initialize ros for sensor and odometry topics
   ros::Subscriber odometrySubscriber = n.subscribe("odom", 20, odometryCallback);
   ros::Subscriber lidarSubscriber = n.subscribe("base_laser", 1, lidarCallback);
+  ros::Subscriber kinectSubscriber = n.subscribe("kinect_depth", 1, depthCallback);
+  tfListener = new tf::TransformListener(ros::Duration(10.0));
   
   while(ros::ok() && run){
     ros::spinOnce();

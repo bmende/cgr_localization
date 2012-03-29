@@ -71,7 +71,6 @@ FIND_LIBRARY( GLEW_LIBRARY
 include_directories(${PROJECT_BINARY_DIR})
 include_directories(${PROJECT_SOURCE_DIR})
 include_directories(${PROJECT_SOURCE_DIR}/src)
-include_directories(${PROJECT_SOURCE_DIR}/src/libraries)
 include_directories(${PROJECT_SOURCE_DIR}/src/shared/math)
 include_directories(${PROJECT_SOURCE_DIR}/src/shared/util)
 include_directories(${PROJECT_SOURCE_DIR}/src/map)
@@ -117,9 +116,6 @@ qt4_wrap_cpp(GUI_MOC_SRCS
 #Creating libraries to eliminate redundant compile steps
 
 add_library(shared_libraries ${SHARED_SRCS})
-IF(ROS_ROOT)
-  add_dependencies(shared_libraries rosbuild_precompile )
-ENDIF(ROS_ROOT)
 target_link_libraries(shared_libraries shared_libraries ${libs})
 
 add_library(map_libraries ${MAP_SRCS})

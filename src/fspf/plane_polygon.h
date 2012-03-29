@@ -31,9 +31,9 @@
 #include "terminal_utils.h"
 #include "timer.h"
 #include "grahams_scan.h"
-#include <Eigen3/Dense>
-#include <Eigen3/Eigenvalues>
-#include <Eigen3/Geometry> 
+#include <eigen3/Eigen/Dense>
+#include <eigen3/Eigen/Eigenvalues>
+#include <eigen3/Eigen/Geometry>
 
 #ifndef PLANE_POLYGON_H
 #define PLANE_POLYGON_H

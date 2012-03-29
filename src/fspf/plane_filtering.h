@@ -26,8 +26,8 @@
 #include <iostream>
 #include <vector>
 #include <math.h>
-#include <Eigen3/Dense>
-#include <Eigen3/Eigenvalues>
+#include <eigen3/Eigen/Dense>
+#include <eigen3/Eigen/Eigenvalues>
 #include "plane_polygon.h"
 
 #include "timer.h"

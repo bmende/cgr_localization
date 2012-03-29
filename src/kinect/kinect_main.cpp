@@ -274,11 +274,11 @@ int main(int argc, char **argv) {
   LoadParameters();
   InitMsgs();
   
-  ros::init(argc, argv, "Cobot_Kinect_Module", ros::init_options::NoSigintHandler);
+  ros::init(argc, argv, "Kinect_Module", ros::init_options::NoSigintHandler);
   n = new ros::NodeHandle();
-  rgbImagePublisher = n->advertise<sensor_msgs::Image>("Cobot/Kinect/RGB", 1);
-  depthImagePublisher = n->advertise<sensor_msgs::Image>("Cobot/Kinect/Depth", 1);
-  processedDepthImagePublisher = n->advertise<sensor_msgs::Image>("Cobot/Kinect/ProcessedDepth", 1);
+  rgbImagePublisher = n->advertise<sensor_msgs::Image>("Kinect/RGB", 1);
+  depthImagePublisher = n->advertise<sensor_msgs::Image>("Kinect/Depth", 1);
+  processedDepthImagePublisher = n->advertise<sensor_msgs::Image>("Kinect/ProcessedDepth", 1);
   
   // main program initialization
   InitHandleStop(&run);

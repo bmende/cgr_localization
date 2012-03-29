@@ -276,7 +276,7 @@ float VectorLocalization2D::observationWeightLidar(vector2f loc, float angle, co
   float logObstacleProb = lidarParams.logObstacleProb;
   float logShortHitProb = lidarParams.logShortHitProb;
   
-  vector2f laserLoc = loc + lidarParams.laserLoc.rotate(angle);
+  vector2f laserLoc = loc + vector2f(lidarParams.laserToBaseTrans.x(),lidarParams.laserToBaseTrans.y()).rotate(angle);
   vector<line2f> lines;
   if(UseAnalyticRender){
     lineCorrespondences = currentMap->getRayToLineCorrespondences(laserLoc, angle, lidarParams.angleResolution, numRays, minRange, maxRange, true, &lines);
@@ -523,7 +523,7 @@ inline Vector2f VectorLocalization2D::attractorFunction(line2f l, Vector2f p, fl
 }
 
 
-void VectorLocalization2D::getPointCloudGradient(vector2f loc, float angle, vector2f& locGrad, float& angleGrad, vector<vector2f> &pointCloud, vector<vector2f> &pointNormals, float& logWeight, const PointCloudParams & pointCloudParams)
+void VectorLocalization2D::getPointCloudGradient(vector2f loc, float angle, vector2f& locGrad, float& angleGrad, const std::vector< vector2f >& pointCloud, const std::vector< vector2f >& pointNormals, float& logWeight, const VectorLocalization2D::PointCloudParams& pointCloudParams)
 {
   //static const bool UseAnalyticRender = false;
   static const bool debug = false;
@@ -637,7 +637,7 @@ void VectorLocalization2D::getPointCloudGradient(vector2f loc, float angle, vect
   if(EnableProfiling) delete ft;
 }
 
-void VectorLocalization2D::getLidarGradient(vector2f loc, float angle, vector2f& locGrad, float& angleGrad, float& logWeight, LidarParams lidarParams)
+void VectorLocalization2D::getLidarGradient(vector2f loc, float angle, vector2f& locGrad, float& angleGrad, float& logWeight, VectorLocalization2D::LidarParams lidarParams, const vector<Vector2f>& laserPoints)
 {
   static const bool EnableProfiling = false;
   
@@ -646,7 +646,11 @@ void VectorLocalization2D::getLidarGradient(vector2f loc, float angle, vector2f&
     ft = new FunctionTimer(__PRETTY_FUNCTION__);
   
   float logShortHitProb = lidarParams.logShortHitProb;
-  vector2f laserLoc = vector2f(V2COMP(loc + lidarParams.laserLoc.rotate(angle)));
+  Matrix2f robotAngle;
+  robotAngle = Rotation2Df(angle);
+  Vector2f laserLocE = Vector2f(V2COMP(loc)) + robotAngle*(lidarParams.laserToBaseTrans);
+  vector2f laserLoc(laserLocE.x(), laserLocE.y());
+  
   if(EnableProfiling) ft->Lap(__LINE__);
   vector<line2f> lines;
   if(UseAnalyticRender){
@@ -673,12 +677,10 @@ void VectorLocalization2D::getLidarGradient(vector2f loc, float angle, vector2f&
   //Construct gradients per point in point cloud
   if(EnableProfiling) ft->Lap(__LINE__);
   
-  Matrix2f rotMat1, rotMat2; 
-  rotMat1 << cos(angle), -sin(angle), sin(angle), cos(angle);
-  rotMat2 << cos(angle+lidarParams.angleResolution), -sin(angle+lidarParams.angleResolution), sin(angle+lidarParams.angleResolution), cos(angle+lidarParams.angleResolution);
+  Matrix2f robotAngle2;
+  robotAngle2 = Rotation2Df(angle+lidarParams.angleResolution);
   const vector<Vector2f> &headings = lidarParams.scanHeadings;
   Vector2f scanPoint, scanPoint2, scanDir, lineDir, attraction;
-  Vector2f laserLocE(V2COMP(laserLoc));
   
   //TODO: Speed up this section!!
   //===========================================================================
@@ -687,10 +689,10 @@ void VectorLocalization2D::getLidarGradient(vector2f loc, float angle, vector2f&
     if(scanRays[i]<minRange || scanRays[i]>maxRange)// || (i%2==0))
       continue;
     laserEval.numObservedPoints++;  
-    scanPoint = laserLocE + (rotMat1*headings[i])*scanRays[i];
+    scanPoint = laserLocE + robotAngle*laserPoints[i];
     
     if(lineCorrespondences[i]>=0){
-      scanPoint2 = laserLocE + (rotMat2*headings[i])*scanRays[i+1];
+      scanPoint2 = laserLocE + robotAngle2*laserPoints[i+1];
       scanDir = (scanPoint2-scanPoint).normalized();
       if(UseAnalyticRender){
         lineDir = Vector2f(V2COMP(lines[lineCorrespondences[i]].Dir()));
@@ -753,7 +755,7 @@ void VectorLocalization2D::getLidarGradient(vector2f loc, float angle, vector2f&
   if(debug) printf("Gradient: %.4f,%.4f %.2f\u00b0\n",V2COMP(locGrad),DEG(angleGrad));
 }
 
-void VectorLocalization2D::refineLocationLidar(vector2f& loc, float& angle, float& initialWeight, float& finalWeight, const LidarParams &lidarParams)
+void VectorLocalization2D::refineLocationLidar(vector2f& loc, float& angle, float& initialWeight, float& finalWeight, const LidarParams &lidarParams, const vector<Vector2f> &laserPoints)
 {
   static const bool debug = false;
   
@@ -766,7 +768,7 @@ void VectorLocalization2D::refineLocationLidar(vector2f& loc, float& angle, floa
   if(debug) printf("before: %.4f,%.4f %.2f\u00b0\n",V2COMP(loc),DEG(angle));
   
   for(int i=0; beingRefined && i<lidarParams.numSteps; i++){
-    getLidarGradient(loc,angle,locGrad,angleGrad,weight,lidarParams);
+    getLidarGradient(loc,angle,locGrad,angleGrad,weight,lidarParams, laserPoints);
     if(i==0) initialWeight = exp(weight);
     loc -= lidarParams.etaLoc*locGrad;
     angle -= lidarParams.etaAngle*angleGrad;
@@ -777,7 +779,7 @@ void VectorLocalization2D::refineLocationLidar(vector2f& loc, float& angle, floa
   finalWeight = exp(weight);
 }
 
-void VectorLocalization2D::refineLocationPointCloud(vector2f& loc, float& angle, float& initialWeight, float& finalWeight, vector< vector2f >& pointCloud, vector< vector2f >& pointNormals, const PointCloudParams & pointCloudParams)
+void VectorLocalization2D::refineLocationPointCloud(vector2f& loc, float& angle, float& initialWeight, float& finalWeight, const std::vector< vector2f >& pointCloud, const std::vector< vector2f >& pointNormals, const VectorLocalization2D::PointCloudParams& pointCloudParams)
 {
   static const bool debug = false;
   //FunctionTimer ft(__PRETTY_FUNCTION__);
@@ -809,10 +811,16 @@ void VectorLocalization2D::refineLidar(const LidarParams &lidarParams)
   laserEval.stageRWeights = 0.0;
   laserEval.lastRunTime = GetTimeSec();
   
+  // Transform laserpoints to robot frame
+  vector< Vector2f > laserPoints(lidarParams.numRays);
+  for(int i=0; i<lidarParams.numRays; i++){
+    laserPoints[i] = lidarParams.laserToBaseTrans + lidarParams.laserToBaseRot*lidarParams.scanHeadings[i]*lidarParams.laserScan[i];
+  }
+  
   particlesRefined = particles;
   if(lidarParams.numSteps>0){
     for(int i=0; i<numParticles; i++){
-      refineLocationLidar(particlesRefined[i].loc, particlesRefined[i].angle, stage0Weights[i], stageRWeights[i], lidarParams);
+      refineLocationLidar(particlesRefined[i].loc, particlesRefined[i].angle, stage0Weights[i], stageRWeights[i], lidarParams, laserPoints);
       laserEval.stage0Weights += stage0Weights[i];
       laserEval.stageRWeights += stageRWeights[i];
     }
@@ -822,7 +830,53 @@ void VectorLocalization2D::refineLidar(const LidarParams &lidarParams)
 }
 
 
-void VectorLocalization2D::refinePointCloud(vector<vector2f> &pointCloud, vector<vector2f> &pointNormals, const PointCloudParams &pointCloudParams)
+void VectorLocalization2D::reducePointCloud(const std::vector< vector2f >& pointCloud, const std::vector< vector2f >& pointNormals, vector< vector2f >& reducedPointCloud, vector< vector2f >& reducedPointNormals)
+{
+  static const bool debug = false;
+  static const float eps = -RAD(0.001);
+  
+  vector<pair<float, int> > angles;
+  size_t N = pointCloud.size();
+  pair<float,int> valuePair;
+  
+  for(unsigned int i=0; i<N; i++){
+    valuePair.first = pointCloud[i].angle();
+    valuePair.second = i;
+    angles.push_back(valuePair);
+  }
+  //N = min(angles.size(),N);
+  sort<vector<pair<float, int> >::iterator >(angles.begin(), angles.end());
+  
+  
+  reducedPointCloud.resize(N);
+  reducedPointNormals.resize(N);
+  int j=0;
+  float lastAngle;
+  for(unsigned int i=0; i<N; ){
+    reducedPointCloud[j] = pointCloud[angles[i].second];
+    reducedPointNormals[j] = pointNormals[angles[i].second];
+    j++;
+    lastAngle = angles[i].first;
+    
+    for(i++;i<N && angles[i].first<=lastAngle+eps;){
+      i++;
+    }
+  }
+  N = j;
+  reducedPointCloud.resize(N);
+  reducedPointNormals.resize(N);
+  
+  
+  if(debug){
+    printf("\n");
+    for(unsigned int i=0; i<N; i++){
+      //printf("%4d: %6.2f\u00b0 %4d\n",int(i),DEG((*it).first),(*it).second);
+      printf("%4d: %6.2f\u00b0\n",int(i),DEG(angles[i].first));
+    }
+  }
+}
+
+void VectorLocalization2D::refinePointCloud(const vector<vector2f> &pointCloud, const vector<vector2f> &pointNormals, const PointCloudParams &pointCloudParams)
 {
   //FunctionTimer ft(__PRETTY_FUNCTION__);
   double tStart = GetTimeSec();
@@ -830,10 +884,16 @@ void VectorLocalization2D::refinePointCloud(vector<vector2f> &pointCloud, vector
   pointCloudEval.stageRWeights = 0.0;
   pointCloudEval.lastRunTime = GetTimeSec();
   
+  /*
+  vector< vector2f > reducedPointCloud, reducedPointNormals;
+  reducePointCloud(pointCloud, pointNormals, reducedPointCloud, reducedPointNormals);
+  */
+  
   particlesRefined = particles;
   if(pointCloudParams.numSteps>0){
     for(int i=0; i<numParticles; i++){
-      refineLocationPointCloud(particlesRefined[i].loc, particlesRefined[i].angle, stage0Weights[i], stageRWeights[i], pointCloud, pointNormals, pointCloudParams);
+      //refineLocationPointCloud(particlesRefined[i].loc, particlesRefined[i].angle, stage0Weights[i], stageRWeights[i],reducedPointCloud, reducedPointNormals, pointCloudParams);
+      refineLocationPointCloud(particlesRefined[i].loc, particlesRefined[i].angle, stage0Weights[i], stageRWeights[i],pointCloud, pointNormals, pointCloudParams);
       pointCloudEval.stage0Weights += stage0Weights[i];
       pointCloudEval.stageRWeights += stageRWeights[i];
     }

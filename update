@@ -1,7 +1,7 @@
 #!/bin/bash
 
 svn export svn+ssh://joydeepb@neontetra.coral.cs.cmu.edu/svn/shared src/shared
-svn export svn+ssh://joydeepb@neontetra.coral.cs.cmu.edu/svn/cobot/trunk/cobot_linux/src/libraries/Eigen3 src/libraries/Eigen3
+#svn export svn+ssh://joydeepb@neontetra.coral.cs.cmu.edu/svn/cobot/trunk/cobot_linux/src/libraries/Eigen3 src/libraries/Eigen3
 
 mkdir src/cgr
 svn export svn+ssh://joydeepb@neontetra.coral.cs.cmu.edu/svn/cobot/trunk/cobot_linux/src/vector_localization/vectorparticlefilter.h src/cgr/vectorparticlefilter.h
@@ -16,7 +16,7 @@ mkdir src/fspf
 #svn export svn+ssh://joydeepb@neontetra.coral.cs.cmu.edu/svn/cobot/trunk/cobot_linux/src/kinect/lib src/kinect/lib
 #svn export svn+ssh://joydeepb@neontetra.coral.cs.cmu.edu/svn/cobot/trunk/cobot_linux/src/kinect/Modules src/kinect/modules
 #svn export svn+ssh://joydeepb@neontetra.coral.cs.cmu.edu/svn/cobot/trunk/cobot_linux/src/kinect/include src/kinect/include
-svn export svn+ssh://joydeepb@neontetra.coral.cs.cmu.edu/svn/cobot/trunk/cobot_linux/src/kinect/kinect_main.cpp src/kinect/kinect_main.cpp
+#svn export svn+ssh://joydeepb@neontetra.coral.cs.cmu.edu/svn/cobot/trunk/cobot_linux/src/kinect/kinect_main.cpp src/kinect/kinect_main.cpp
 svn export svn+ssh://joydeepb@neontetra.coral.cs.cmu.edu/svn/cobot/trunk/cobot_linux/src/kinect/plane_filtering.h src/fspf/plane_filtering.h
 svn export svn+ssh://joydeepb@neontetra.coral.cs.cmu.edu/svn/cobot/trunk/cobot_linux/src/kinect/plane_filtering.cpp src/fspf/plane_filtering.cpp
 svn export svn+ssh://joydeepb@neontetra.coral.cs.cmu.edu/svn/cobot/trunk/cobot_linux/src/kinect/grahams_scan.cpp src/fspf/grahams_scan.cpp
