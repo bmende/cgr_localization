@@ -76,6 +76,8 @@ public:
     public:
     float* laserScan;
     int numRays;
+    float minAngle;
+    float maxAngle;
     float angleResolution;
     float minRange;
     float maxRange;
@@ -119,8 +121,8 @@ public:
     float logShortHitProb;
     float logOutOfRangeProb;
     float attractorRange;
-    float kinectStdDev;
-    float kinectCorrelationFactor;
+    float stdDev;
+    float corelationFactor;
     
     int numSteps;
     int minPoints;
@@ -131,6 +133,8 @@ public:
     float minCosAngleError;
     float correspondenceMargin;
     float minRefineFraction;
+    
+    float kernelSize;
   };
   
   
@@ -207,7 +211,7 @@ public:
   /// Update distribution based on LIDAR observations
   void updateLidar(const VectorLocalization2D::LidarParams& lidarParams, const VectorLocalization2D::MotionModelParams& motionParams);
   /// Update distribution based on Point Cloud observations
-  void updatePointCloud(vector< vector2f >& pointCloud, vector< vector2f >& pointNormals, const VectorLocalization2D::MotionModelParams& motionParams);
+  void updatePointCloud(vector< vector2f >& pointCloud, vector< vector2f >& pointNormals, const VectorLocalization2D::MotionModelParams& motionParams, const VectorLocalization2D::PointCloudParams& pointCloudParams);
   /// Resample distribution
   void resample(Resample type = LowVarianceResampling);
   
@@ -222,14 +226,16 @@ public:
   
   /// Attractor function used for refining location hypotheses 
   inline Vector2f attractorFunction(line2f l, Vector2f p, float attractorRange, float margin = 0);
+  /// Observation function for a single ray
+  inline Vector2f observationFunction(line2f l, Vector2f p);
   /// Gradient based on pointCloud observation
-  void getPointCloudGradient(vector2f loc, float angle, vector2f& locGrad, float& angleGrad, const vector< vector2f >& pointCloud, const vector< vector2f >& pointNormals, float& logWeight, const VectorLocalization2D::PointCloudParams& pointCloudParams);
+  void getPointCloudGradient(vector2f loc, float angle, vector2f& locGrad, float& angleGrad, const std::vector< vector2f >& pointCloud, const std::vector< vector2f >& pointNormals, float& logWeight, const VectorLocalization2D::PointCloudParams& pointCloudParams, const std::vector< int >& lineCorrespondences, const std::vector< line2f >& lines);
   /// Gradient based on LIDAR observation
-  void getLidarGradient(vector2f loc, float angle, vector2f& locGrad, float& angleGrad, float& logWeight, VectorLocalization2D::LidarParams lidarParams, const vector< Vector2f >& laserPoints);
+  void getLidarGradient(vector2f loc, float angle, vector2f& locGrad, float& angleGrad, float& logWeight, VectorLocalization2D::LidarParams lidarParams, const vector< Vector2f >& laserPoints, const vector<int> & lineCorrespondences, const vector<line2f> &lines);
   /// Observation likelihood based on LIDAR obhservation
-  float observationWeightLidar(vector2f loc, float angle, const VectorLocalization2D::LidarParams& lidarParams);
+  float observationWeightLidar(vector2f loc, float angle, const VectorLocalization2D::LidarParams& lidarParams, const std::vector< Vector2f >& laserPoints);
   /// Observation likelihood based on point cloud obhservation
-  float observationWeightPointCloud(vector2f loc, float angle, vector< vector2f >& pointCloud, vector< vector2f >& pointNormals, const VectorLocalization2D::PointCloudParams& pointCloudParams);
+  float observationWeightPointCloud(vector2f loc, float angle, vector< vector2f >& pointCloud, vector< vector2f >& pointNormals, const PointCloudParams& pointCloudParams);
   /// Probability of specified pose corresponding to motion model
   float motionModelWeight(vector2f loc, float angle, const VectorLocalization2D::MotionModelParams& motionParams);
   /// Set pose with specified uncertainty
@@ -262,6 +268,8 @@ public:
   void getUncertainty(float &_angleUnc, float &_locUnc);
   /// Removes duplicate points with the same observation angle and range
   void reducePointCloud(const vector< vector2f >& pointCloud, const vector< vector2f >& pointNormals, vector< vector2f >& reducedPointCloud, vector< vector2f >& reducedPointNormals);
+  /// Returns current particles
+  void getParticles(vector<Particle2D> &_particles){_particles = particles;}
 };
 
 #endif //VECTORPARTICLEFILTER_H

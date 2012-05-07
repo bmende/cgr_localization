@@ -1,7 +1,6 @@
 #!/bin/bash
 
 svn export svn+ssh://joydeepb@neontetra.coral.cs.cmu.edu/svn/shared src/shared
-#svn export svn+ssh://joydeepb@neontetra.coral.cs.cmu.edu/svn/cobot/trunk/cobot_linux/src/libraries/Eigen3 src/libraries/Eigen3
 
 mkdir src/cgr
 svn export svn+ssh://joydeepb@neontetra.coral.cs.cmu.edu/svn/cobot/trunk/cobot_linux/src/vector_localization/vectorparticlefilter.h src/cgr/vectorparticlefilter.h

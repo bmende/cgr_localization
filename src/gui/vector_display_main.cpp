@@ -374,7 +374,7 @@ int main(int argc, char *argv[])
   
   InitHandleStop(&runApp);
   display->show();
-  MyThread thread("./maps");
+  MyThread thread(ros::package::getPath("cgr_localization").append("/maps/").c_str());
   thread.start();
   int retVal = app->exec();
   runApp = false;

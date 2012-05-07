@@ -4,3 +4,4 @@ lib
 msg_gen
 srv_gen
 src/cgr_localization
+doc

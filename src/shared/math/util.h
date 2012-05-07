@@ -118,11 +118,23 @@ inline num randn(num stdDev = 1.0, num mean = 0.0)
   //Uses Box-Muller transform to turn a pair of uniform random numbers into a pair of gaussian random numbers
   num u1 = ((num)rand())/((num)RAND_MAX);
   num u2 = ((num)rand())/((num)RAND_MAX);
-  num z1 = sqrt(-2.0*log(u1)) * sin(2.0*M_PI*u2);
+  num z1 = sqrt(-2.0*log(u1)) * sin(M_2PI*u2);
   //float z2 = sqrt(-2*log(u1)) * cos(2*M_PI*u2);
   num x1 = z1 * stdDev + mean;
   //float x2 = z2 * std_dev + mean;
   return x1;
+}
+
+///Return two (pseudo)random numbers drawn from the Normal Dsitribution
+template <class num>
+inline void randn2(num &x1, num &x2)
+{ 
+  //Uses Box-Muller transform to turn a pair of uniform random numbers into a pair of gaussian random numbers
+  num u1 = ((num)rand())/((num)RAND_MAX);
+  num u2 = ((num)rand())/((num)RAND_MAX);
+  num r = sqrt(-2.0*log(u1));
+  x1 = r * sin(M_2PI*u2);
+  x2 = r * cos(M_2PI*u2);
 }
 
 template <class num1,class num2>

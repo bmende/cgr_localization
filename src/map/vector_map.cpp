@@ -418,8 +418,161 @@ std::vector<int> VectorMap::getSceneLines(vector2f loc, float maxRange)
   return sceneLines;
 }
 
-void VectorMap::trimOcclusion(vector2f& loc, line2f& line1, line2f& line2, vector< line2f >& sceneLines)
+inline float cross(const Eigen::Vector3f &v1, const Eigen::Vector3f &v2)
+{
+  return v1.cross(v2).z();
+}
+
+static const float eps = 1e-5;
+
+inline bool lineIntersectsLine(const Eigen::Vector3f &l1_p0, const Eigen::Vector3f &l1_p1, const Eigen::Vector3f &l1_dir,
+                               const Eigen::Vector3f &l2_p0, const Eigen::Vector3f &l2_p1, const Eigen::Vector3f &l2_dir)
+{
+  return cross(l1_dir,l2_p0-l1_p0)*cross(l1_dir,l2_p1-l1_p0)<eps && cross(l2_dir,l1_p0-l2_p0)*cross(l2_dir,l1_p1-l2_p0)<eps;
+}
+
+inline bool lineIntersectsRay(const Eigen::Vector3f &l1_p0, const Eigen::Vector3f &l1_p1,
+                               const Eigen::Vector3f &r_p0, const Eigen::Vector3f &r_dir)
+{
+  return cross(l1_p0-r_p0,r_dir)*cross(l1_p1-r_p0,r_dir)<eps;
+}
+
+inline vector2f tovector2f(const Eigen::Vector3f &v)
+{
+  return vector2f(v.x(),v.y());
+}
+
+inline Eigen::Vector3f lineIntersectionLine(const Eigen::Vector3f &l1_p0, const Eigen::Vector3f &l1_p1, const Eigen::Vector3f &l1_dir,
+                                     const Eigen::Vector3f &l2_p0, const Eigen::Vector3f &l2_p1, const Eigen::Vector3f &l2_dir)
+{ 
+  float den = cross(l2_dir, l1_dir);
+  float ua = cross(l1_p0-l2_p0, l1_dir)/den;
+  return l2_p0 + ua*l2_dir;
+}
+
+inline Eigen::Vector3f lineIntersectionLine(const Eigen::Vector3f &l1_p0, const Eigen::Vector3f &l1_p1,
+                                            const Eigen::Vector3f &l2_p0, const Eigen::Vector3f &l2_p1)
+{ 
+  Eigen::Vector3f l1_dir(l1_p1-l1_p0), l2_dir(l2_p1-l2_p0);
+  float den = cross(l2_dir, l1_dir);
+  float ua = cross(l1_p0-l2_p0, l1_dir)/den;
+  return l2_p0 + ua*l2_dir;
+}
+
+void VectorMap::trimOcclusion2(vector2f& loc_g, line2f& line1, line2f& line2, vector< line2f >& sceneLines)
 {  
+  using namespace Eigen;
+  // Checks if any part of line2 is occluded by line1 when seen from loc, and if so, line2 is trimmed accordingly, adding sub-lines to sceneLines if necessary
+  static const float eps = 1e-4;
+  static const float sqeps = 1e-8;
+  if(line1.Length()<eps || line2.Length()<eps)
+    return;
+  
+  Vector3f loc(V2COMP(loc_g),0);
+  Vector3f l1_p0(V2COMP(line1.P0()),0);
+  Vector3f l1_p1(V2COMP(line1.P1()),0);
+  Vector3f l1_dir(l1_p1-l1_p0);
+  Vector3f l1_r0(l1_p0-loc);
+  Vector3f l1_r1(l1_p1-loc);
+  Vector3f l2_p0(V2COMP(line2.P0()),0);
+  Vector3f l2_p1(V2COMP(line2.P1()),0);
+  Vector3f l2_dir(l2_p1-l2_p0);
+  Vector3f l2_r0(l2_p0-loc);
+  Vector3f l2_r1(l2_p1-loc);
+  
+  vector2f l1_p0_g(line1.P0());
+  vector2f l1_p1_g(line1.P1());
+  vector2f l2_p0_g(line2.P0());
+  vector2f l2_p1_g(line2.P1());
+  
+  //Ensure that r0 vector to r1 vector is in the positive right-handed order
+  if( cross(l1_r0,l1_r1)<0.0 ){
+    swap(l1_r0,l1_r1);
+    swap(l1_p0,l1_p1);
+  }
+  if( cross(l2_r0,l2_r1)<0.0 ){
+    swap(l2_r0,l2_r1);
+    swap(l2_p0,l2_p1);
+  }
+  
+  if( (cross(l1_r0, l2_r0)>=0.0 && cross(l1_r1, l2_r0)>=0.0) || (cross(l2_r1, l1_r0)>=0.0 && cross(l2_r1, l2_r1)>=0.0) )
+    return; //No Line interaction
+    bool intersects, rayOcclusion1, rayOcclusion2;
+  
+  //completeOcclusion = line1.intersects(loc,l2_p0,false, false, true) && line1.intersects(loc,l2_p1,false, false, true);
+  
+  //intersects = line2.intersects(line1,false,false,false);
+  //rayOcclusion1 = line2.intersects(loc,l1_r0, false); // The semi-infinite ray from loc and passing through line1.p0 intersects line2
+  //rayOcclusion2 = line2.intersects(loc,l1_r1, false); // The semi-infinite ray from loc and passing through line1.p1 intersects line2
+  
+  intersects = lineIntersectsLine(l1_p0,l1_p1,l1_dir, l2_p0,l2_p1,l2_dir);
+  rayOcclusion1 = lineIntersectsRay(l2_p0,l2_p1, loc,l1_r0); // The semi-infinite ray from loc and passing through line1.p0 intersects line2
+  rayOcclusion2 = lineIntersectsRay(l2_p0,l2_p1, loc,l1_r1); // The semi-infinite ray from loc and passing through line1.p1 intersects line2
+  
+  Vector3f p, mid;
+  if(intersects){
+    //line1 and line2 intersect
+    //mid = line2.intersection(line1,false,false);
+    mid = lineIntersectionLine(l1_p0,l1_p1,l1_dir, l2_p0,l2_p1,l2_dir);
+    if( cross((l1_p0-mid), l2_p0-mid) > 0.0){
+      //Delete the right hand part of line2
+      line2 = line2f(tovector2f(mid),l2_p1_g);
+      //line2f l(tovector2f(mid), l2_p0_g);
+      //if(l.intersects(loc,l1_r0,false)){
+      if(lineIntersectsRay(mid,l2_p0, loc, l1_r0)){
+        //p = l.intersection(loc,l1_p0,false, true);
+        p = lineIntersectionLine(mid, l2_p0, loc,l1_p0);
+        if((l2_p0-p).squaredNorm()>sqeps)  //Part of the right hand part of line2 extends beyond line1, it may still be visible
+          sceneLines.push_back(line2f(l2_p0_g, tovector2f(p)));
+      }
+    }else{
+      //Delete the left hand part of line2
+      line2 = line2f(l2_p0_g,tovector2f(mid));
+      //line2f l(mid, l2_p1);
+      //if(l.intersects(loc,l1_r1,false)){
+      if(lineIntersectsRay(mid,l2_p1, loc, l1_r1)){
+        //p = l.intersection(loc,l1_p1,false, true);
+        p = lineIntersectionLine(mid, l2_p0, loc,l1_p1);
+        if((l2_p1-p).squaredNorm()>sqeps)  //Part of the left hand part of line2 extends beyond line1, it may still be visible
+          sceneLines.push_back(line2f(l2_p1_g, tovector2f(p)));
+      }
+    }
+  }else{ 
+    bool completeOcclusion = line1.intersects(line2f(loc_g,l2_p0_g),false, false, true) && line1.intersects(line2f(loc_g,l2_p1_g),false, false, true);
+    
+    bool occlusion0 = rayOcclusion1 && !line2.intersects(line2f(loc_g,l1_p0_g), false, false, false);  // line1.p0 is in front of, and occludes line2
+    bool occlusion1 = rayOcclusion2 && !line2.intersects(line2f(loc_g,l1_p1_g), false, false, false); // line1.p1 is in front of, and occludes line2
+    if(completeOcclusion){
+      //Trim the line to zero length
+      line2 = line2f(0.0,0.0,0.0,0.0);
+    }else if(occlusion0 && occlusion1){
+      //line2 is partially occluded in the middle by line1. Break up into 2 segments, make line2 one segment, push back the other segment to the sceneLines list
+      //mid = line2.intersection(line2f(loc,l1_p0),false, true);
+      mid = lineIntersectionLine(l2_p0,l2_p1,l2_dir,loc,l1_p0,l1_r0);
+      // newLine2 = the unoccluded part of line2 at its right hand end
+      line2f newLine2(l2_p0_g,tovector2f(mid));
+      //mid = line2.intersection(line2f(loc_g,l1_p1_g),false, true);
+      mid = lineIntersectionLine(l2_p0,l2_p1,l2_dir,loc,l1_p1,l1_r1);
+      line2 = newLine2;
+      // save the unoccluded part of line2 at its left hand end, if any
+      if((mid-l2_p1).squaredNorm()>sqeps)
+        sceneLines.push_back(line2f(tovector2f(mid),l2_p1_g));
+    }else if(occlusion0){
+      //The left hand end of line2 is occluded, trim it
+      //vector2f mid = line2.intersection(loc,l1_p0,false, true);
+      mid = lineIntersectionLine(l2_p0,l2_p1,l2_dir,loc,l1_p0,l1_r0);
+      line2 = line2f(l2_p0_g,tovector2f(mid));
+    }else if(occlusion1){
+      //The right hand end of line2 is occluded, trim it
+      //vector2f mid = line2.intersection(line2f(loc,l1_p1),false, true);
+      mid = lineIntersectionLine(l2_p0,l2_p1,l2_dir,loc,l1_p1,l1_r1);
+      line2 = line2f(tovector2f(mid),l2_p1_g);
+    }
+  }
+}
+
+void VectorMap::trimOcclusion(vector2f& loc, line2f& line1, line2f& line2, vector< line2f >& sceneLines)
+{
   // Checks if any part of line2 is occluded by line1 when seen from loc, and if so, line2 is trimmed accordingly, adding sub-lines to sceneLines if necessary
   static const float eps = 1e-4;
   static const float sqeps = 1e-8;
@@ -563,7 +716,7 @@ vector<line2f> VectorMap::sceneRender(vector2f loc, float a0, float a1)
   if(linesList.size()>=MaxLines){
     char buf[2048];
     sprintf(buf,"Runaway Analytic Scene Render at %.30f,%.30f, %.3f : %.3f\u00b0",V2COMP(loc),DEG(a0),DEG(a1));
-    //TerminalWarning(buf);
+    TerminalWarning(buf);
   }
   for(i=0; i<scene.size(); i++){
     if(scene[i].Length()>eps)

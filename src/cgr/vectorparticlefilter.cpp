@@ -33,9 +33,10 @@ void VectorLocalization2D::LidarParams::initialize()
 {
   float a0 = -0.5*angleResolution*float(numRays);
   scanHeadings.resize(numRays);
-  for(int i=0; i<numRays; i++){
-    float a = a0 + angleResolution*float(i);
+  int i=0;
+  for(float a=minAngle; a<maxAngle; a+=angleResolution){
     scanHeadings[i] = Vector2f(cos(a),sin(a));
+    i++;
   }
 }
 
@@ -214,9 +215,11 @@ float VectorLocalization2D::observationWeightPointCloud(vector2f loc, float angl
   float logOutOfRangeProb = pointCloudParams.logOutOfRangeProb;
   float logObstacleProb = pointCloudParams.logObstacleProb;
   float logShortHitProb = pointCloudParams.logShortHitProb;
+  float corelationFactor = pointCloudParams.corelationFactor;
   float minRange = pointCloudParams.minRange;
   float maxRange = pointCloudParams.maxRange;
   float sqMaxRange = sq(maxRange);
+  float stdDev = pointCloudParams.stdDev;
   float curAngle;
   
   vector<line2f> lines;
@@ -232,41 +235,47 @@ float VectorLocalization2D::observationWeightPointCloud(vector2f loc, float angl
   
   float logTotalWeight = 0.0;
   
-  
   Matrix2f rotMat1; 
-  rotMat1 << cos(angle), -sin(angle), sin(angle), cos(angle);
+  rotMat1 = Rotation2Df(angle);
   
   int numCorrespondences = 0;
-  Vector2f heading, scanPoint, lineNorm, curPoint, attraction, locE(V2COMP(loc));
+  Vector2f heading, scanPoint, lineNorm, curPoint, attraction, locE(V2COMP(loc)), rotatedNormal;
   
   for(int i=0; i<pointCloud.size(); i++){
     curPoint = rotMat1*Vector2f(V2COMP(pointCloud[i])) + locE;
-    
     attraction = Vector2f(0.0,0.0);
     if(lineCorrespondences[i]>=0){
-      if(debug && lineCorrespondences[i]>lines.size()-1)
-        TerminalWarning("Invalid Line correspondence!");
-      
+      numCorrespondences++;
+      if(UseAnalyticRender){
+        attraction = observationFunction(lines[lineCorrespondences[i]], curPoint);
+      }else{
+        attraction = observationFunction(currentMap->lines[lineCorrespondences[i]], curPoint);
+      }
+      //logTotalWeight += -attraction.squaredNorm()*corelationFactor/stdDev;
+      /**/
       if(UseAnalyticRender){
         lineNorm = Vector2f(V2COMP(lines[lineCorrespondences[i]].Perp()));
-        attraction = attractorFunction(lines[lineCorrespondences[i]], curPoint,pointCloudParams.attractorRange);
       }else{
         lineNorm = Vector2f(V2COMP(currentMap->lines[lineCorrespondences[i]].Perp()));
-        attraction = attractorFunction(currentMap->lines[lineCorrespondences[i]], curPoint, pointCloudParams.attractorRange);
       }
-      logTotalWeight += -attraction.squaredNorm()*pointCloudParams.kinectCorrelationFactor/pointCloudParams.kinectStdDev;
+      rotatedNormal = rotMat1*Vector2f(V2COMP(pointNormals[i]));
+      if(true || fabs(lineNorm.dot(rotatedNormal)) > pointCloudParams.minCosAngleError){
+        logTotalWeight += -attraction.squaredNorm()*corelationFactor/stdDev;
+      }else{
+        logTotalWeight += logObstacleProb*corelationFactor;
+      }
+      /**/
     }else if( pointCloud[i].sqlength()<sqMaxRange){
-      logTotalWeight += pointCloudParams.logObstacleProb*pointCloudParams.kinectCorrelationFactor;
+      logTotalWeight += logObstacleProb*corelationFactor;
     }else{
-      logTotalWeight += pointCloudParams.logOutOfRangeProb*pointCloudParams.kinectCorrelationFactor;
+      logTotalWeight += logOutOfRangeProb*corelationFactor;
     }
   }
-
+  //return numCorrespondences;
   return exp(logTotalWeight);
 }
 
-
-float VectorLocalization2D::observationWeightLidar(vector2f loc, float angle, const LidarParams &lidarParams)
+float VectorLocalization2D::observationWeightLidar(vector2f loc, float angle, const LidarParams &lidarParams, const vector<Vector2f> &laserPoints)
 {
   static const bool debug = false;
   float numRays = lidarParams.numRays;
@@ -279,9 +288,9 @@ float VectorLocalization2D::observationWeightLidar(vector2f loc, float angle, co
   vector2f laserLoc = loc + vector2f(lidarParams.laserToBaseTrans.x(),lidarParams.laserToBaseTrans.y()).rotate(angle);
   vector<line2f> lines;
   if(UseAnalyticRender){
-    lineCorrespondences = currentMap->getRayToLineCorrespondences(laserLoc, angle, lidarParams.angleResolution, numRays, minRange, maxRange, true, &lines);
+    lineCorrespondences = currentMap->getRayToLineCorrespondences(laserLoc, angle, lidarParams.angleResolution, numRays, 0.0, maxRange, true, &lines);
   }else{
-    lineCorrespondences = currentMap->getRayToLineCorrespondences(laserLoc, angle, lidarParams.angleResolution, numRays, minRange, maxRange, false, NULL);
+    lineCorrespondences = currentMap->getRayToLineCorrespondences(laserLoc, angle, lidarParams.angleResolution, numRays, 0.0, maxRange, false, NULL);
   }
   
   float *scanRays = lidarParams.laserScan;
@@ -289,38 +298,49 @@ float VectorLocalization2D::observationWeightLidar(vector2f loc, float angle, co
   Vector2f attraction;
   float midScan = float(numRays)/2.0;
   
-  Matrix2f rotMat1;
-  rotMat1 <<  cos(angle), -sin(angle), sin(angle), cos(angle);
+  Matrix2f robotAngle;
+  robotAngle = Rotation2Df(angle);
   Vector2f heading, scanPoint, laserLocE(V2COMP(laserLoc));
-  const vector<Vector2f> &headings = lidarParams.scanHeadings;
   
   float logTotalWeight = 0.0;
-  //Construct gradients per point in point cloud
-  if(debug) debugLines.clear();
+  
+  Vector2f scanPoint2, scanDir, lineDir;
+  Matrix2f robotAngle2;
+  robotAngle2 = Rotation2Df(angle+lidarParams.angleResolution);
   for(int i=0; i<numRays-1; i++){
-    if(scanRays[i]<minRange || scanRays[i]>maxRange){
-      //continue;
-      scanRays[i] = maxRange;
+    if(scanRays[i]>maxRange || scanRays[i]<minRange){
+      logTotalWeight += logObstacleProb*lidarParams.correlationFactor;
+      continue;
     }
     
     if(lineCorrespondences[i]>=0){
-      
-      scanPoint = laserLocE + rotMat1*heading*scanRays[i];
-      if(UseAnalyticRender && lineCorrespondences[i]>lines.size()-1){
-        TerminalAlert("Line Correspondence failure!");
-        exit(1);
+      scanPoint = laserLocE + robotAngle*laserPoints[i];
+      scanPoint2 = laserLocE + robotAngle2*laserPoints[i+1];
+      scanDir = (scanPoint2-scanPoint).normalized();
+      if(UseAnalyticRender){
+        lineDir = Vector2f(V2COMP(lines[lineCorrespondences[i]].Dir()));
+      }else{
+        lineDir = Vector2f(V2COMP(currentMap->lines[lineCorrespondences[i]].Dir()));
       }
-      if(UseAnalyticRender)
-        attraction = attractorFunction(lines[lineCorrespondences[i]], scanPoint, lidarParams.attractorRange);
-      else
-        attraction = attractorFunction(currentMap->lines[lineCorrespondences[i]], scanPoint, lidarParams.attractorRange);
-      logTotalWeight += -min(attraction.squaredNorm()/lidarParams.lidarStdDev, -logShortHitProb)*lidarParams.correlationFactor;
+      if(fabs(lineDir.dot(scanDir))>lidarParams.minCosAngleError){
+        if(UseAnalyticRender)
+          attraction = observationFunction(lines[lineCorrespondences[i]], scanPoint);
+        else
+          attraction = observationFunction(currentMap->lines[lineCorrespondences[i]], scanPoint);
+        logTotalWeight += -min(attraction.squaredNorm()/lidarParams.lidarStdDev, -logShortHitProb)*lidarParams.correlationFactor;
+      }else{
+        logTotalWeight += logObstacleProb*lidarParams.correlationFactor;
+      }
+      
     }else if(scanRays[i]<maxRange){
       logTotalWeight += logObstacleProb*lidarParams.correlationFactor;
     }else{
       logTotalWeight += logOutOfRangeProb*lidarParams.correlationFactor;
     }
   }
+  //if(debug) printf("numCorrespondences: %d\n",numCorrespondences);
+  //exit(-1);
+  //return numCorrespondences;
   return exp(logTotalWeight);
 }
 
@@ -416,14 +436,12 @@ void VectorLocalization2D::updateLidar(const LidarParams &lidarParams, const Mot
   
   double tStart = GetTimeSec();
   
-  //WARNING: This is not the standard particle filter update! Here, we need to account for both observation and motion models!
-  /*
-  computeParticleWeights(lastDistanceMoved, lastAngleTurned,vector2f(0.01,0.01),RAD(1.0));
-  lastDistanceMoved.zero();
-  lastAngleTurned = 0.0;
-  particlesRefined.insert(particlesRefined.end(), particles.begin(),particles.end());
-  */
-  /**/
+  // Transform laserpoints to robot frame
+  vector< Vector2f > laserPoints(lidarParams.numRays);
+  for(int i=0; i<lidarParams.numRays; i++){
+    laserPoints[i] = lidarParams.laserToBaseTrans + lidarParams.laserToBaseRot*lidarParams.scanHeadings[i]*lidarParams.laserScan[i];
+  }
+  
   //Compute the sampling density
   float sqDensityKernelSize = sq(lidarParams.kernelSize);
   float totalDensity = 0.0;
@@ -436,8 +454,8 @@ void VectorLocalization2D::updateLidar(const LidarParams &lidarParams, const Mot
     for(int j=0; j<N; j++){
       if(i==j)
         continue;
-      //if( (particlesRefined[j].loc - particlesRefined[i].loc).sqlength() < sqDensityKernelSize && fabs(angle_diff(particlesRefined[j].angle, particlesRefined[i].angle))<RAD(20.0))
-      if( (particlesRefined[j].loc - particlesRefined[i].loc).sqlength() < sqDensityKernelSize)
+      if( (particlesRefined[j].loc - particlesRefined[i].loc).sqlength() < sqDensityKernelSize && fabs(angle_diff(particlesRefined[j].angle, particlesRefined[i].angle))<RAD(20.0))
+      //if( (particlesRefined[j].loc - particlesRefined[i].loc).sqlength() < sqDensityKernelSize)
         w++;
     }
     samplingDensity[i] = w;
@@ -453,27 +471,57 @@ void VectorLocalization2D::updateLidar(const LidarParams &lidarParams, const Mot
   if(debug) printf("\nParticle weights:\n");
   for(int i=0; i<N; i++){
     Particle2D &p = particlesRefined[i];
-    float w1 = stageRWeights[i];
+    float w1 = observationWeightLidar(p.loc, p.angle, lidarParams, laserPoints);
     float w2 = motionModelWeight(p.loc, p.angle, motionParams);
     p.weight = w1*w2/samplingDensity[i];
     if(debug) printf("%2d: %f , %f , %f\n",i,w1,w2,p.weight);
   }
-  /**/
+  
   updateTime = GetTimeSec() - tStart;
 }
 
-void VectorLocalization2D::updatePointCloud(vector< vector2f >& pointCloud, vector< vector2f >& pointNormals, const MotionModelParams & motionParams)
+void VectorLocalization2D::updatePointCloud(vector< vector2f >& pointCloud, vector< vector2f >& pointNormals, const MotionModelParams &motionParams, const PointCloudParams &pointCloudParams)
 {
   static const bool debug = false;
+  static const bool usePermissibility = true;
+  
   double tStart = GetTimeSec();
   
-  //WARNING: This is not the standard particle filter update! Here, we need to account for both observation and motion models!
-  computeParticleWeights(lastDistanceMoved, lastAngleTurned,vector2f(0.05,0.05),RAD(5.0),motionParams);
-  lastDistanceMoved.zero();
-  lastAngleTurned = 0.0;
-  particlesRefined.insert(particlesRefined.end(), particles.begin(),particles.end());
+  //Compute the sampling density
+  float sqDensityKernelSize = sq(pointCloudParams.kernelSize);
+  float totalDensity = 0.0;
+  int N = int(particlesRefined.size());
+  if(samplingDensity.size()!=N)
+    samplingDensity.resize(N);
+  if(debug) printf("\nParticle samplingDensity:\n");
+  for(int i=0; i<N; i++){
+    float w = 0.99;
+    for(int j=0; j<N; j++){
+      if(i==j)
+        continue;
+      if( (particlesRefined[j].loc - particlesRefined[i].loc).sqlength() < sqDensityKernelSize && fabs(angle_diff(particlesRefined[j].angle, particlesRefined[i].angle))<RAD(20.0))
+        //if( (particlesRefined[j].loc - particlesRefined[i].loc).sqlength() < sqDensityKernelSize)
+        w++;
+    }
+    samplingDensity[i] = w;
+    totalDensity += w;
+    if(debug) printf("%2d:%f\n",i,w);
+  }
+  // Normalize densities, not really necessary since resampling does not require normalized weights
+  for(int i=0; i<N; i++){
+    samplingDensity[i] /= totalDensity;
+  }
   
-  if(debug) printf("\n");
+  //Compute importance weights = observation x motion / samplingDensity
+  if(debug) printf("\nParticle weights:\n");
+  for(int i=0; i<N; i++){
+    Particle2D &p = particlesRefined[i];
+    float w1 = observationWeightPointCloud(p.loc, p.angle, pointCloud, pointNormals, pointCloudParams);
+    float w2 = motionModelWeight(p.loc, p.angle, motionParams);
+    p.weight = w1*w2/samplingDensity[i];
+    if(debug) printf("%2d: %f , %f , %f\n",i,w1,w2,p.weight);
+  }
+  
   updateTime = GetTimeSec() - tStart;
 }
 
@@ -514,16 +562,37 @@ inline Vector2f VectorLocalization2D::attractorFunction(line2f l, Vector2f p, fl
   attraction = (p-p0) - dir*location ;
   
   float d = attraction.norm();
+  /*
   if(d>0.5*attractorRange){
     float d2 = max(0.0f, attractorRange - d);
     attraction *= 2.0f*d2/attractorRange;
   }
-  if(debug) debugLines.push_back( line2f( vector2f(p.x(),p.y()) ,vector2f((p-attraction).x(),(p-attraction).y()) ) );
+  */
+  if(d>attractorRange){
+    attraction = Vector2f::Zero();
+  }
+  if(debug){
+    debugLines.push_back( line2f( vector2f(p.x(),p.y()) ,vector2f((p-attraction).x(),(p-attraction).y()) ) );
+  }
   return attraction;
 }
 
+inline Vector2f VectorLocalization2D::observationFunction(line2f l, Vector2f p)
+{
+  static const bool debug = false;
+  Vector2f attraction(0.0,0.0), dir(V2COMP(l.Dir())), p0(V2COMP(l.P0())), p1(V2COMP(l.P1()));
+  float location = (p-p0).dot(dir);
+  attraction = (p-p0) - dir*location ;
+  if(debug){
+    debugLines.push_back( line2f( vector2f(p.x(),p.y()) ,vector2f((p-attraction).x(),(p-attraction).y()) ) );
+    const float crossSize = 0.002;
+    debugLines.push_back( line2f( vector2f(p.x()+crossSize,p.y()) , vector2f(p.x()-crossSize,p.y())) );
+    debugLines.push_back( line2f( vector2f(p.x(),p.y()+crossSize) , vector2f(p.x(),p.y()-crossSize)) );
+  }
+  return attraction;
+}
 
-void VectorLocalization2D::getPointCloudGradient(vector2f loc, float angle, vector2f& locGrad, float& angleGrad, const std::vector< vector2f >& pointCloud, const std::vector< vector2f >& pointNormals, float& logWeight, const VectorLocalization2D::PointCloudParams& pointCloudParams)
+void VectorLocalization2D::getPointCloudGradient(vector2f loc, float angle, vector2f& locGrad, float& angleGrad, const std::vector< vector2f >& pointCloud, const std::vector< vector2f >& pointNormals, float& logWeight, const VectorLocalization2D::PointCloudParams& pointCloudParams, const vector<int> & lineCorrespondences, const vector<line2f> &lines)
 {
   //static const bool UseAnalyticRender = false;
   static const bool debug = false;
@@ -531,14 +600,15 @@ void VectorLocalization2D::getPointCloudGradient(vector2f loc, float angle, vect
   if(EnableProfiling)
     ft = new FunctionTimer(__FUNCTION__);
   
-  float minRange = pointCloudParams.minRange;
-  float maxRange = pointCloudParams.maxRange;
   float numTotalPoints = pointCloud.size();
   
   if(EnableProfiling) ft->Lap(__LINE__);
-  vector<int> lineCorrespondences;
-  vector<line2f> lines;
+  //vector<int> lineCorrespondences;
+  //vector<line2f> lines;
   
+  /*
+  float minRange = pointCloudParams.minRange;
+  float maxRange = pointCloudParams.maxRange;
   float a0 = angle-0.5*pointCloudParams.fieldOfView;
   float a1 = angle+0.5*pointCloudParams.fieldOfView;
   if(UseAnalyticRender){
@@ -547,6 +617,7 @@ void VectorLocalization2D::getPointCloudGradient(vector2f loc, float angle, vect
     lineCorrespondences = currentMap->getRayToLineCorrespondences(loc, angle, a0, a1, pointCloud, minRange, maxRange);
     lines = currentMap->lines;
   }
+  */
   if(EnableProfiling) ft->Lap(__LINE__);
   
   points2.clear();
@@ -570,7 +641,7 @@ void VectorLocalization2D::getPointCloudGradient(vector2f loc, float angle, vect
   
   Vector2f curPoint, locE(V2COMP(loc)), attraction, lineNorm, rotatedNormal;
   Matrix2f rotMat1;
-  rotMat1 << cos(angle), -sin(angle), sin(angle), cos(angle);
+  rotMat1 = Rotation2Df(angle);
   
   for(int i=0; i<numObservedPoints; i++){
     curPoint = rotMat1*Vector2f(V2COMP(pointCloud[i])) + locE;
@@ -585,7 +656,7 @@ void VectorLocalization2D::getPointCloudGradient(vector2f loc, float angle, vect
       if(cosAngle > pointCloudParams.minCosAngleError){
         attraction = attractorFunction(lines[lineCorrespondences[i]], curPoint,pointCloudParams.attractorRange, pointCloudParams.correspondenceMargin);
         //Add the point and attraction (only if non-zero)
-        logWeight += -min(attraction.squaredNorm()/pointCloudParams.kinectStdDev, -pointCloudParams.logShortHitProb)*pointCloudParams.kinectCorrelationFactor;
+        //logWeight += -min(attraction.squaredNorm()/pointCloudParams.stdDev, -pointCloudParams.logShortHitProb)*pointCloudParams.corelationFactor;
         
         gradients2[numPointsInt] = attraction;
         points2[numPointsInt] = curPoint;
@@ -637,7 +708,7 @@ void VectorLocalization2D::getPointCloudGradient(vector2f loc, float angle, vect
   if(EnableProfiling) delete ft;
 }
 
-void VectorLocalization2D::getLidarGradient(vector2f loc, float angle, vector2f& locGrad, float& angleGrad, float& logWeight, VectorLocalization2D::LidarParams lidarParams, const vector<Vector2f>& laserPoints)
+void VectorLocalization2D::getLidarGradient(vector2f loc, float angle, vector2f& locGrad, float& angleGrad, float& logWeight, VectorLocalization2D::LidarParams lidarParams, const vector<Vector2f>& laserPoints, const vector<int> & lineCorrespondences, const vector<line2f> &lines)
 {
   static const bool EnableProfiling = false;
   
@@ -652,12 +723,14 @@ void VectorLocalization2D::getLidarGradient(vector2f loc, float angle, vector2f&
   vector2f laserLoc(laserLocE.x(), laserLocE.y());
   
   if(EnableProfiling) ft->Lap(__LINE__);
-  vector<line2f> lines;
+  
+  /*
   if(UseAnalyticRender){
     lineCorrespondences = currentMap->getRayToLineCorrespondences(laserLoc, angle, lidarParams.angleResolution, lidarParams.numRays, lidarParams.minRange, lidarParams.maxRange, true, &lines);
   }else{
     lineCorrespondences = currentMap->getRayToLineCorrespondences(laserLoc, angle, lidarParams.angleResolution, lidarParams.numRays, lidarParams.minRange, lidarParams.maxRange);
   }
+  */
   if(EnableProfiling) ft->Lap(__LINE__);
   
   points.clear();
@@ -679,14 +752,13 @@ void VectorLocalization2D::getLidarGradient(vector2f loc, float angle, vector2f&
   
   Matrix2f robotAngle2;
   robotAngle2 = Rotation2Df(angle+lidarParams.angleResolution);
-  const vector<Vector2f> &headings = lidarParams.scanHeadings;
   Vector2f scanPoint, scanPoint2, scanDir, lineDir, attraction;
   
   //TODO: Speed up this section!!
   //===========================================================================
   laserEval.numObservedPoints = 0;
   for(int i=0; i<lidarParams.numRays-1; i++, curAngle+=lidarParams.angleResolution){
-    if(scanRays[i]<minRange || scanRays[i]>maxRange)// || (i%2==0))
+    if(scanRays[i]<minRange || scanRays[i]>maxRange)
       continue;
     laserEval.numObservedPoints++;  
     scanPoint = laserLocE + robotAngle*laserPoints[i];
@@ -767,8 +839,19 @@ void VectorLocalization2D::refineLocationLidar(vector2f& loc, float& angle, floa
   
   if(debug) printf("before: %.4f,%.4f %.2f\u00b0\n",V2COMP(loc),DEG(angle));
   
+  Matrix2f robotAngle;
+  robotAngle = Rotation2Df(angle);  
+  Vector2f laserLocE = Vector2f(V2COMP(loc)) + robotAngle*(lidarParams.laserToBaseTrans);
+  vector2f laserLoc(laserLocE.x(), laserLocE.y());
+  vector<line2f> lines;
+  if(UseAnalyticRender){
+    lineCorrespondences = currentMap->getRayToLineCorrespondences(laserLoc, angle, lidarParams.angleResolution, lidarParams.numRays, lidarParams.minRange, lidarParams.maxRange, true, &lines);
+  }else{
+    lineCorrespondences = currentMap->getRayToLineCorrespondences(laserLoc, angle, lidarParams.angleResolution, lidarParams.numRays, lidarParams.minRange, lidarParams.maxRange);
+  }
+  
   for(int i=0; beingRefined && i<lidarParams.numSteps; i++){
-    getLidarGradient(loc,angle,locGrad,angleGrad,weight,lidarParams, laserPoints);
+    getLidarGradient(loc,angle,locGrad,angleGrad,weight,lidarParams, laserPoints, lineCorrespondences, lines);
     if(i==0) initialWeight = exp(weight);
     loc -= lidarParams.etaLoc*locGrad;
     angle -= lidarParams.etaAngle*angleGrad;
@@ -789,16 +872,29 @@ void VectorLocalization2D::refineLocationPointCloud(vector2f& loc, float& angle,
   float angleGrad = 0.0;
   bool beingRefined = true;
   
+  
+  float a0 = angle-0.5*pointCloudParams.fieldOfView;
+  float a1 = angle+0.5*pointCloudParams.fieldOfView;
+  vector<line2f> lines;
+  if(UseAnalyticRender){
+    lineCorrespondences = currentMap->getRayToLineCorrespondences(loc, angle, a0, a1, pointCloud, pointCloudParams.minRange, pointCloudParams.maxRange, true, &lines);
+  }else{
+    lineCorrespondences = currentMap->getRayToLineCorrespondences(loc, angle, a0, a1, pointCloud, pointCloudParams.minRange, pointCloudParams.maxRange);
+    lines = currentMap->lines;
+  }
+  
   vector2f locPrev = loc;
   float anglePrev = angle;
   float weight;
+  locCorrectionP0 = loc;
   for(int i=0; beingRefined && i<pointCloudParams.numSteps; i++){
-    getPointCloudGradient(loc,angle,locGrad,angleGrad,pointCloud,pointNormals,weight, pointCloudParams);
+    getPointCloudGradient(loc,angle,locGrad,angleGrad,pointCloud,pointNormals,weight, pointCloudParams, lineCorrespondences, lines);
     if(i==0) initialWeight = exp(weight);
     loc -= pointCloudParams.etaLoc*locGrad;
     angle -= pointCloudParams.etaAngle*angleGrad;
     beingRefined = fabs(angleGrad)>pointCloudParams.minRefineFraction*pointCloudParams.maxAngleGradient && locGrad.sqlength()>sq(pointCloudParams.minRefineFraction*pointCloudParams.maxLocGradient);
   }
+  locCorrectionP1 = loc;
   finalWeight = exp(weight);
   if(debug) printf("gradient: %7.3f,%7.3f %6.1f\u00b0\n",V2COMP(loc-locPrev),DEG(angle-anglePrev));
 }
@@ -1078,7 +1174,7 @@ void VectorLocalization2D::drawDisplay(vector<float> &lines_p1x, vector<float> &
   static const bool drawParticles = true;
   static const bool drawLidarPoints = true;
   static const bool drawKinectPoints = true;
-  static const bool drawCorrections = false;
+  static const bool drawCorrections = true;
   static const bool drawSceneRender = false;
   
   static const float GradientsScale = 1.0;
@@ -1091,7 +1187,6 @@ void VectorLocalization2D::drawDisplay(vector<float> &lines_p1x, vector<float> &
   static const int LineExtentColor = 0xFFD659;
   static const int DebugColour = 0xFF0000;
   
-    
   for(int i=0; i<debugLines.size(); i++){
     lines_p1x.push_back(scale*debugLines[i].P0().x);
     lines_p1y.push_back(scale*debugLines[i].P0().y);
@@ -1099,6 +1194,7 @@ void VectorLocalization2D::drawDisplay(vector<float> &lines_p1x, vector<float> &
     lines_p2y.push_back(scale*debugLines[i].P1().y);
     lines_color.push_back(DebugColour);
   }
+  debugLines.clear();
   
   if(drawCorrections){
     vector2f p2 = locCorrectionP1 + 20.0*(locCorrectionP1 - locCorrectionP0);
@@ -1197,7 +1293,6 @@ void VectorLocalization2D::drawDisplay(vector<float> &lines_p1x, vector<float> &
       points_x.push_back(scale*points[i].x());
       points_y.push_back(scale*points[i].y());
       points_color.push_back(LidarPointColor);
-      
       Vector2f p = points[i] - GradientsScale*gradients[i];
       lines_p1x.push_back(scale*points[i].x());
       lines_p1y.push_back(scale*points[i].y());

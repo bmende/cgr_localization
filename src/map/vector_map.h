@@ -29,6 +29,7 @@
 #include "triangle.h"
 #include "terminal_utils.h"
 #include "timer.h"
+#include <eigen3/Eigen/Eigen>
 
 #ifndef VECTOR_MAP_H
 #define VECTOR_MAP_H
@@ -83,6 +84,7 @@ public:
   vector<float> getRayCast(vector2f loc, float angle, float da, int numRays, float minRange, float maxRange);
   ///Checks if any part of line2 is occluded by line1 when seen from loc, and if so, line2 is trimmed accordingly, adding sub-lines to sceneLines if necessary
   void trimOcclusion(vector2f &loc, line2f &line1, line2f &line2, vector<line2f> &sceneLines);
+  void trimOcclusion2(vector2f& loc_g, line2f& line1, line2f& line2, vector<line2f>& sceneLines);
   /// Get a set of lines which are visible from loc
   vector<int> getSceneLines(vector2f loc, float maxRange);
   /// Load map by name

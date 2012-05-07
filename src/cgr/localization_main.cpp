@@ -27,9 +27,13 @@
 #include <ros/ros.h>
 #include <tf/tf.h>
 #include <tf/transform_listener.h>
-#include "sensor_msgs/LaserScan.h"
-#include "sensor_msgs/Image.h"
-#include "nav_msgs/Odometry.h"
+#include <tf/transform_broadcaster.h>
+#include <sensor_msgs/LaserScan.h>
+#include <sensor_msgs/Image.h>
+#include <nav_msgs/Odometry.h>
+#include <geometry_msgs/PoseArray.h>
+#include <geometry_msgs/PoseWithCovarianceStamped.h>
+#include <ros/package.h>
 
 #include "vectorparticlefilter.h"
 #include "vector_map.h"
@@ -48,7 +52,7 @@ using namespace std;
 bool run = true;
 bool usePointCloud = false;
 bool noLidar = false;
-int numParticles = 10;
+int numParticles = 20;
 int debugLevel = -1;
 
 vector2f initialLoc;
@@ -63,7 +67,9 @@ Publisher guiPublisher;
 Publisher localizationPublisher;
 Publisher filteredPointCloudPublisher;
 ServiceServer localizationServer;
-tf::TransformListener* tfListener;
+Publisher particlesPublisher;
+tf::TransformBroadcaster *transformBroadcaster;
+tf::TransformListener *transformListener;
 DisplayMsg guiMsg;
 
 VectorLocalization2D::PointCloudParams pointCloudParams;
@@ -79,6 +85,7 @@ float curAngle;
 double curTime;
 sensor_msgs::LaserScan lastLidarMsg;
 sensor_msgs::Image lastDepthMsg;
+geometry_msgs::PoseArray particlesMsg;
 
 //Point Cloud parameters
 GVector::matrix3d<float> kinectToRobotTransform;
@@ -163,6 +170,49 @@ void publishLocation(bool limitRate)
   msg.pointCloudMeanSqError = pointCloudEval.meanSqError;
   
   localizationPublisher.publish(msg);
+  
+  //Publish particles
+  vector<Particle2D> particles;
+  localization->getParticles(particles);
+  particlesMsg.poses.resize(particles.size()); 
+  geometry_msgs::Pose particle;
+  for(unsigned int i=0; i<particles.size(); i++){
+    particle.position.x = particles[i].loc.x;
+    particle.position.y = particles[i].loc.y;
+    particle.position.z = 0;
+    particle.orientation.w = cos(0.5*particles[i].angle);
+    particle.orientation.x = 0;
+    particle.orientation.y = 0;
+    particle.orientation.z = sin(0.5*particles[i].angle);
+    particlesMsg.poses[i] = particle;
+  }
+  particlesPublisher.publish(particlesMsg);
+  
+  //Publish map to base_footprint tf
+  try{
+    tf::StampedTransform odomToBaseTf;
+    transformListener->lookupTransform("odom","base_footprint",ros::Time(0), odomToBaseTf);
+    
+    vector2f map_base_trans = curLoc;
+    float map_base_rot = curAngle;
+    
+    vector2f odom_base_trans(odomToBaseTf.getOrigin().x(), odomToBaseTf.getOrigin().y());
+    float odom_base_rot = 2.0*atan2(odomToBaseTf.getRotation().z(), odomToBaseTf.getRotation().w());
+    
+    vector2f base_odom_trans = -odom_base_trans.rotate(-odom_base_rot);
+    float base_odom_rot = -odom_base_rot;
+    
+    vector2f map_odom_trans = map_base_trans + base_odom_trans.rotate(map_base_rot);
+    float map_odom_rot = angle_mod(map_base_rot + base_odom_rot);
+    
+    tf::Transform mapToOdomTf;
+    mapToOdomTf.setOrigin(tf::Vector3(V2COMP(map_odom_trans), 0.0));
+    mapToOdomTf.setRotation(tf::Quaternion(tf::Vector3(0,0,1),map_odom_rot));
+    transformBroadcaster->sendTransform(tf::StampedTransform(mapToOdomTf, ros::Time::now(), "map", "odom"));
+  }
+  catch (tf::TransformException ex){
+    //Do nothing: We'll just try again next time
+  }
 }
 
 void publishGUI()
@@ -185,7 +235,7 @@ void publishGUI()
 void LoadParameters()
 {
   WatchFiles watch_files;
-  ConfigReader config("./");
+  ConfigReader config(ros::package::getPath("cgr_localization").append("/").c_str());
   
   config.init(watch_files);
   
@@ -335,8 +385,9 @@ void LoadParameters()
     error = error || !c.getReal("logObstacleProb", pointCloudParams.logObstacleProb);
     error = error || !c.getReal("logShortHitProb", pointCloudParams.logShortHitProb);
     error = error || !c.getReal("logOutOfRangeProb", pointCloudParams.logOutOfRangeProb);
-    error = error || !c.getReal("kinectCorrelationFactor", pointCloudParams.kinectCorrelationFactor);
-    error = error || !c.getReal("kinectStdDev", pointCloudParams.kinectStdDev);
+    error = error || !c.getReal("correlationFactor", pointCloudParams.corelationFactor);
+    error = error || !c.getReal("stdDev", pointCloudParams.stdDev);
+    error = error || !c.getReal("kernelSize", pointCloudParams.kernelSize);
     error = error || !c.getReal("attractorRange", pointCloudParams.attractorRange);
     error = error || !c.getReal("maxRange", pointCloudParams.maxRange);
     error = error || !c.getReal("minRange", pointCloudParams.minRange);
@@ -369,7 +420,7 @@ void InitModels(){
 }
 
 void odometryCallback(const nav_msgs::OdometryConstPtr &msg)
-{
+{ 
   static float angle = 0;
   static vector2f loc(0,0);
   static bool initialized=false;
@@ -388,7 +439,7 @@ void odometryCallback(const nav_msgs::OdometryConstPtr &msg)
   double dy = d.y;
   double dtheta = newAngle-angle;
   
-  if(debugLevel>0) printf("Odometry x:%7.3f y:%7.3f a:%7.3f\u00b0\n",dx, dy, DEG(dtheta));
+  if(debugLevel>0) printf("Odometry t:%f x:%7.3f y:%7.3f a:%7.3f\u00b0\n",msg->header.stamp.toSec(), dx, dy, DEG(dtheta));
   
   localization->predict(dx, dy, dtheta, motionParams);
   
@@ -404,19 +455,47 @@ void lidarCallback(const sensor_msgs::LaserScan &msg)
   }
   
   tf::StampedTransform baseLinkToLaser;
-  tfListener->lookupTransform(msg.header.frame_id, "base_link", ros::Time::now(), baseLinkToLaser);
+  try{
+    transformListener->lookupTransform(msg.header.frame_id, "base_footprint", ros::Time(0), baseLinkToLaser);
+  }
+  catch(tf::TransformException ex){
+    ROS_ERROR("%s",ex.what());
+  }
   tf::Vector3 translationTf = baseLinkToLaser.getOrigin();
   tf::Quaternion rotationTf = baseLinkToLaser.getRotation();
   
-  Quaternionf rot(rotationTf.w(), rotationTf.x(), rotationTf.y(), rotationTf.z());
-  Vector3f trans(translationTf.x(), translationTf.y(), translationTf.z());
+  Quaternionf rotQuat3D(rotationTf.w(), rotationTf.x(), rotationTf.y(), rotationTf.z());
+  Matrix3f rot3D(rotQuat3D);
+  Vector3f trans3D(translationTf.x(), translationTf.y(),translationTf.z());
+  
+  trans3D = rot3D*trans3D;
+  lidarParams.laserToBaseRot = rot3D.topLeftCorner(2,2);
+  lidarParams.laserToBaseTrans = trans3D.topLeftCorner(2,1);
+  
+  bool newLaser = lidarParams.minRange != msg.range_min || 
+    lidarParams.maxRange != msg.range_max ||
+    lidarParams.minAngle != msg.angle_min || 
+    lidarParams.maxAngle != msg.angle_max ||
+    lidarParams.angleResolution != msg.angle_increment ||
+    lidarParams.numRays != int(msg.ranges.size());
+  if(newLaser){
+    lidarParams.minRange = msg.range_min;
+    lidarParams.maxRange = msg.range_max;
+    lidarParams.minAngle = msg.angle_min;
+    lidarParams.maxAngle = msg.angle_max;
+    lidarParams.angleResolution = msg.angle_increment;
+    lidarParams.numRays = int(msg.ranges.size());
+    lidarParams.initialize();
+  }
   
   if(int(msg.ranges.size()) != lidarParams.numRays){
     TerminalWarning("Incorrect number of Laser Scan rays!");
     printf("received: %d\n",int(msg.ranges.size()));
   }
+  
   for(int i=0; i<(int)msg.ranges.size(); i++)
     lidarParams.laserScan[i] = msg.ranges[i];
+  
   
   if(!noLidar){
     localization->refineLidar(lidarParams);
@@ -470,10 +549,18 @@ void depthCallback(const sensor_msgs::Image &msg)
     }
     
     localization->refinePointCloud(pointCloud2D, pointCloudNormals2D, pointCloudParams);
-    localization->updatePointCloud(pointCloud2D, pointCloudNormals2D, motionParams);
+    localization->updatePointCloud(pointCloud2D, pointCloudNormals2D, motionParams, pointCloudParams);
     localization->resample(VectorLocalization2D::LowVarianceResampling);
     localization->computeLocation(curLoc,curAngle);
   }
+}
+
+void initialPoseCallback(const geometry_msgs::PoseWithCovarianceStamped &msg)
+{
+  float angle = 2.0*asin(msg.pose.pose.orientation.z);
+  vector2f loc(V2COMP(msg.pose.pose.position));
+  printf("Initializing CGR localization at %.3f,%.3f, %.2f\u00b0\n",V2COMP(loc), DEG(angle));
+  localization->initialize(numParticles,curMapName.c_str(), loc, angle,sqrt(msg.pose.covariance[0]),sqrt(msg.pose.covariance[35]));
 }
 
 int main(int argc, char** argv)
@@ -526,7 +613,7 @@ int main(int argc, char** argv)
   srand(seed);
   
   //Initialize particle filter, sensor model, motion model, refine model
-  string mapsFolder("./maps");
+  string mapsFolder(ros::package::getPath("cgr_localization").append("/maps/"));
   localization = new VectorLocalization2D(mapsFolder.c_str());
   InitModels();
   
@@ -539,6 +626,7 @@ int main(int argc, char** argv)
   ros::NodeHandle n;
   guiPublisher = n.advertise<DisplayMsg>("localization_gui",1,true);
   localizationPublisher = n.advertise<LocalizationMsg>("localization",1,true);
+  particlesPublisher = n.advertise<geometry_msgs::PoseArray>("particlecloud",1,false);
   Sleep(0.1);
   
   localizationServer = n.advertiseService("localization_interface", &localizationCallback);
@@ -547,7 +635,9 @@ int main(int argc, char** argv)
   ros::Subscriber odometrySubscriber = n.subscribe("odom", 20, odometryCallback);
   ros::Subscriber lidarSubscriber = n.subscribe("base_laser", 1, lidarCallback);
   ros::Subscriber kinectSubscriber = n.subscribe("kinect_depth", 1, depthCallback);
-  tfListener = new tf::TransformListener(ros::Duration(10.0));
+  ros::Subscriber initialPoseSubscriber = n.subscribe("initialpose",1,initialPoseCallback);
+  transformListener = new tf::TransformListener(ros::Duration(10.0));
+  transformBroadcaster = new tf::TransformBroadcaster();  
   
   while(ros::ok() && run){
     ros::spinOnce();

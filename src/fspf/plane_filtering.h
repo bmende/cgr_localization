@@ -76,7 +76,7 @@ class KinectRawDepthCam : public DepthCam{
     /// Lookup table to convert from raw depth (11 bit int) to metric depth (float)
     float depthLookups[65536];
     /// Lookup table for unit vectors for each pixel in the depth image, normalized to unit depth
-    vector3f* pointCloudLookups;
+    vector<vector3f> pointCloudLookups;
     
     KinectRawDepthCam();
     /// Convert depth value from provided row and column to a 3D point
@@ -103,7 +103,7 @@ class KinectOpenNIDepthCam : public DepthCam{
     /// Lookup table to convert from raw depth (11 bit int) to metric depth (float)
     float depthLookups[65536];
     /// Lookup table for unit vectors for each pixel in the depth image, normalized to unit depth
-    vector3f* pointCloudLookups;
+    vector<vector3f> pointCloudLookups;
     
     KinectOpenNIDepthCam();
     /// Convert depth value from provided row and column to a 3D point

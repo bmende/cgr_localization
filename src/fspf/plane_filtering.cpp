@@ -42,15 +42,19 @@ DepthCam::DepthCam()
 
 KinectRawDepthCam::KinectRawDepthCam()
 {
+  /*
   a = 3.008;
   b = -0.002745;
+  */
+  a = 3.008;
+  b = -0.002805;
   f = 600.0;
   width = 640;
   height = 480;
   fovH = RAD(57.00);
   fovV = RAD(43.0); 
   maxDepthVal = 1500;
-  pointCloudLookups = NULL;
+  pointCloudLookups.clear();
   initDepthReconstructionLookups();
 }
 
@@ -89,17 +93,11 @@ void KinectRawDepthCam::initDepthReconstructionLookups()
   float x,y,z;
   int ind;
   
-  if(pointCloudLookups!=NULL)
-    delete pointCloudLookups;
-  pointCloudLookups = (vector3f*) malloc(height*width*sizeof(vector3f));
+  pointCloudLookups.resize(height*width);
   
   for(unsigned int row = 0; row<height; row++){
     for(unsigned int col = 0; col<width; col++){
       ind = row*width + col;
-      /*
-      y = -h*(float(col)-(float(width)-1.0)*0.5);
-      z = -v*(float(row)-(float(height)-1.0)*0.5);
-      */
       y = -(float(col)/((float(width)-1.0)*0.5)-1.0)*tanHFovH;
       z = -(float(row)/((float(height)-1.0)*0.5)-1.0)*tanHFovV;
       pointCloudLookups[ind] = vector3f(1.0f,y,z,1.0f);
@@ -137,7 +135,7 @@ KinectOpenNIDepthCam::KinectOpenNIDepthCam()
   fovH = RAD(57.00/2);
   fovV = RAD(43.0/2); 
   maxDepthVal = 6000;
-  pointCloudLookups = NULL;
+  pointCloudLookups.clear();
   initDepthReconstructionLookups();
 }
 
@@ -188,9 +186,7 @@ void KinectOpenNIDepthCam::initDepthReconstructionLookups()
   float x,y,z;
   int ind;
   
-  if(pointCloudLookups!=NULL)
-    delete pointCloudLookups;
-  pointCloudLookups = (vector3f*) malloc(height*width*sizeof(vector3f));
+  pointCloudLookups.resize(height*width);
   
   for(unsigned int row = 0; row<height; row++){
     for(unsigned int col = 0; col<width; col++){
@@ -269,7 +265,6 @@ void PlaneFilter::GenerateCompletePointCloud(void* depthImage, vector< vector3f 
     pointCloud.push_back(depthCam->depthPixelTo3D(i,depthImage));
     pixelLocs.push_back(i);
   }
-  printf("GCP: %d points\n", int(pointCloud.size()));  
 }
 
 void PlaneFilter::GenerateSampledPointCloud(void* depthImage, vector< vector3f >& pointCloud, unsigned int numPoints)
