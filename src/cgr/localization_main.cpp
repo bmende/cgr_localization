@@ -633,7 +633,7 @@ int main(int argc, char** argv)
   
   //Initialize ros for sensor and odometry topics
   ros::Subscriber odometrySubscriber = n.subscribe("odom", 20, odometryCallback);
-  ros::Subscriber lidarSubscriber = n.subscribe("base_laser", 1, lidarCallback);
+  ros::Subscriber lidarSubscriber = n.subscribe("scan", 1, lidarCallback);
   ros::Subscriber kinectSubscriber = n.subscribe("kinect_depth", 1, depthCallback);
   ros::Subscriber initialPoseSubscriber = n.subscribe("initialpose",1,initialPoseCallback);
   transformListener = new tf::TransformListener(ros::Duration(10.0));
