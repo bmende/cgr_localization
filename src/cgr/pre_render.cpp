@@ -40,7 +40,7 @@ int numSteps = 0;
 int debugLevel = 0;
 float minRange = 0.000001;
 float maxRange = 8.0;
-double resolution = 0.05;
+double resolution = 0.2;
 
 VectorMap *vectorMap;
 

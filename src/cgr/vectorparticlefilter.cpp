@@ -46,6 +46,8 @@ VectorLocalization2D::VectorLocalization2D(const char* _mapsFolder)
   loadAtlas();
   numParticles = 0;
   particles.clear();
+  locCorrectionP0.zero();
+  locCorrectionP1.zero();
 }
 
 VectorLocalization2D::VectorLocalization2D(int _numParticles)
