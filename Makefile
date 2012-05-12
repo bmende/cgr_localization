@@ -11,10 +11,10 @@ cmake: CMakeLists.txt
 	cd $(buildDir) && cmake -DCMAKE_BUILD_TYPE=$(buildType) ..
 
 build:	cmake
-	$(MAKE) -C $(buildDir)
+	$(MAKE) --no-print-directory -C $(buildDir)
 
 clean:
-	$(MAKE) -C $(buildDir) clean
+	$(MAKE) --no-print-directory -C $(buildDir) clean
 	
 cleanup_cache:
 	cd $(buildDir) && rm -rf *

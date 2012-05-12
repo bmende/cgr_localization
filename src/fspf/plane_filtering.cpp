@@ -42,12 +42,12 @@ DepthCam::DepthCam()
 
 KinectRawDepthCam::KinectRawDepthCam()
 {
-  /*
   a = 3.008;
   b = -0.002745;
-  */
+  /*
   a = 3.008;
   b = -0.002805;
+  */
   f = 600.0;
   width = 640;
   height = 480;

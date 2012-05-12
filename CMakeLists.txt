@@ -1,5 +1,5 @@
 
-PROJECT(cobot_linux)
+PROJECT(cgr_loclization)
 cmake_minimum_required(VERSION 2.6)
 
 set (arch ${})

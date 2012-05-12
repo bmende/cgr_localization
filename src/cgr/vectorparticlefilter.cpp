@@ -620,9 +620,6 @@ void VectorLocalization2D::getPointCloudGradient(vector2f loc, float angle, vect
   */
   if(EnableProfiling) ft->Lap(__LINE__);
   
-  points2.clear();
-  gradients2.clear();
-  
   float numPoints = 0;
   
   float cosAngle;
@@ -633,10 +630,8 @@ void VectorLocalization2D::getPointCloudGradient(vector2f loc, float angle, vect
   pointCloudEval.numObservedPoints = numObservedPoints;
   
   //Construct gradients per point in point cloud
-  if(int(gradients2.size())<numObservedPoints)
-    gradients2.resize(numObservedPoints);
-  if(int(points2.size())<numObservedPoints)
-    points2.resize(numObservedPoints);
+  gradients2.resize(numObservedPoints);
+  points2.resize(numObservedPoints);
   int numPointsInt = 0;
   
   Vector2f curPoint, locE(V2COMP(loc)), attraction, lineNorm, rotatedNormal;

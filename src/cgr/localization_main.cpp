@@ -71,6 +71,7 @@ Publisher particlesPublisher;
 tf::TransformBroadcaster *transformBroadcaster;
 tf::TransformListener *transformListener;
 DisplayMsg guiMsg;
+sensor_msgs::PointCloud filteredPointCloudMsg; /// FSPF point cloud
 
 VectorLocalization2D::PointCloudParams pointCloudParams;
 VectorLocalization2D::LidarParams lidarParams;
@@ -102,8 +103,7 @@ bool localizationCallback(LocalizationInterfaceSrv::Request& req, LocalizationIn
 {  
   vector2f loc(req.loc_x, req.loc_y);
   if(debugLevel>0) printf("Setting location: %f %f %f\u00b0 on %s\n",V2COMP(loc),DEG(req.orientation),req.map.c_str());
-  localization->setLocation(loc, req.orientation,req.map.c_str(),0.5,DEG(5.0));
-  
+  localization->setLocation(loc, req.orientation,req.map.c_str(),0.01,RAD(1.0));
   return true;
 }
 
@@ -416,6 +416,11 @@ void LoadParameters()
 
 void InitModels(){
   lidarParams.laserScan = (float*) malloc(lidarParams.numRays*sizeof(float));
+  
+  filteredPointCloudMsg.header.seq = 0;
+  filteredPointCloudMsg.header.frame_id = "base_footprint"; 
+  filteredPointCloudMsg.channels.clear();
+  
   return;
 }
 
@@ -424,6 +429,11 @@ void odometryCallback(const nav_msgs::OdometryConstPtr &msg)
   static float angle = 0;
   static vector2f loc(0,0);
   static bool initialized=false;
+  static double tLast = 0;
+  
+  if(tLast>msg->header.stamp.toSec())
+    initialized = false;
+  
   if(!initialized){
     angle = tf::getYaw(msg->pose.pose.orientation);
     loc = vector2f(msg->pose.pose.position.x, msg->pose.pose.position.y);
@@ -437,7 +447,14 @@ void odometryCallback(const nav_msgs::OdometryConstPtr &msg)
   vector2f d = (newLoc-loc).rotate(-angle);
   double dx = d.x;
   double dy = d.y;
-  double dtheta = newAngle-angle;
+  double dtheta = angle_mod(newAngle-angle);
+  
+  if((sq(dx)+sq(dy))>sq(0.4) || fabs(dtheta)>RAD(40)){
+    printf("Odometry out of bounds: x:%7.3f y:%7.3f a:%7.3f\u00b0\n",dx, dy, DEG(dtheta));
+    angle = newAngle;
+    loc = newLoc;
+    return;
+  }
   
   if(debugLevel>0) printf("Odometry t:%f x:%7.3f y:%7.3f a:%7.3f\u00b0\n",msg->header.stamp.toSec(), dx, dy, DEG(dtheta));
   
@@ -456,7 +473,7 @@ void lidarCallback(const sensor_msgs::LaserScan &msg)
   
   tf::StampedTransform baseLinkToLaser;
   try{
-    transformListener->lookupTransform(msg.header.frame_id, "base_footprint", ros::Time(0), baseLinkToLaser);
+    transformListener->lookupTransform("base_footprint", msg.header.frame_id, ros::Time(0), baseLinkToLaser);
   }
   catch(tf::TransformException ex){
     ROS_ERROR("%s",ex.what());
@@ -518,6 +535,35 @@ void depthCallback(const sensor_msgs::Image &msg)
   
   if(!usePointCloud)
     return;
+  
+  tf::StampedTransform baseLinkToKinect;
+  try{
+    transformListener->lookupTransform("base_footprint", msg.header.frame_id, ros::Time(0), baseLinkToKinect);
+  }
+  catch(tf::TransformException ex){
+    ROS_ERROR("%s",ex.what());
+  }
+  tf::Vector3 translationTf = baseLinkToKinect.getOrigin();
+  tf::Quaternion rotationTf = baseLinkToKinect.getRotation();
+  Quaternionf rotQuat3D(rotationTf.w(), rotationTf.x(), rotationTf.y(), rotationTf.z());
+  Matrix3f rotMatrix(rotQuat3D);
+  kinectToRobotTransform.m11 = rotMatrix(0,0);
+  kinectToRobotTransform.m12 = rotMatrix(0,1);
+  kinectToRobotTransform.m13 = rotMatrix(0,2);
+  kinectToRobotTransform.m14 = translationTf.x();
+  kinectToRobotTransform.m21 = rotMatrix(1,0);
+  kinectToRobotTransform.m22 = rotMatrix(1,1);
+  kinectToRobotTransform.m23 = rotMatrix(1,2);
+  kinectToRobotTransform.m24 = translationTf.y();
+  kinectToRobotTransform.m31 = rotMatrix(2,0);
+  kinectToRobotTransform.m32 = rotMatrix(2,1);
+  kinectToRobotTransform.m33 = rotMatrix(2,2);
+  kinectToRobotTransform.m34 = translationTf.z();
+  kinectToRobotTransform.m41 = 0;
+  kinectToRobotTransform.m42 = 0;
+  kinectToRobotTransform.m43 = 0;
+  kinectToRobotTransform.m44 = 1;
+  
   //Generate filtered point cloud  
   vector<vector3f> filteredPointCloud;
   vector<vector3f> pointCloudNormals;
@@ -528,9 +574,26 @@ void depthCallback(const sensor_msgs::Image &msg)
   planeFilter.GenerateFilteredPointCloud(depth, filteredPointCloud, pixelLocs, pointCloudNormals, outlierCloud, planePolygons);
   
   //Transform from kinect coordinates to robot coordinates
+  
   for(unsigned int i=0; i<filteredPointCloud.size(); i++){
     filteredPointCloud[i] = filteredPointCloud[i].transform(kinectToRobotTransform);
     pointCloudNormals[i] = pointCloudNormals[i].transform(kinectToRobotTransform);
+  }
+  
+
+  if(debugLevel>0){
+    filteredPointCloudMsg.points.clear();
+    filteredPointCloudMsg.header.stamp = ros::Time::now();
+    
+    vector<geometry_msgs::Point32>* points = &(filteredPointCloudMsg.points);
+    geometry_msgs::Point32 p;
+    for(int i=0; i<(int)filteredPointCloud.size(); i++){
+      p.x = filteredPointCloud[i].x;
+      p.y = filteredPointCloud[i].y;
+      p.z = filteredPointCloud[i].z;
+      points->push_back(p);
+    }
+    filteredPointCloudPublisher.publish(filteredPointCloudMsg);
   }
   
   //Call particle filter
@@ -560,7 +623,8 @@ void initialPoseCallback(const geometry_msgs::PoseWithCovarianceStamped &msg)
   float angle = 2.0*asin(msg.pose.pose.orientation.z);
   vector2f loc(V2COMP(msg.pose.pose.position));
   printf("Initializing CGR localization at %.3f,%.3f, %.2f\u00b0\n",V2COMP(loc), DEG(angle));
-  localization->initialize(numParticles,curMapName.c_str(), loc, angle,sqrt(msg.pose.covariance[0]),sqrt(msg.pose.covariance[35]));
+  //localization->initialize(numParticles,curMapName.c_str(), loc, angle,sqrt(msg.pose.covariance[0]),sqrt(msg.pose.covariance[35]));
+  localization->initialize(numParticles,curMapName.c_str(), loc, angle,0.01,RAD(1.0));
 }
 
 int main(int argc, char** argv)
@@ -633,11 +697,13 @@ int main(int argc, char** argv)
   
   //Initialize ros for sensor and odometry topics
   ros::Subscriber odometrySubscriber = n.subscribe("odom", 20, odometryCallback);
-  ros::Subscriber lidarSubscriber = n.subscribe("scan", 1, lidarCallback);
+  ros::Subscriber lidarSubscriber = n.subscribe("scan", 5, lidarCallback);
   ros::Subscriber kinectSubscriber = n.subscribe("kinect_depth", 1, depthCallback);
   ros::Subscriber initialPoseSubscriber = n.subscribe("initialpose",1,initialPoseCallback);
   transformListener = new tf::TransformListener(ros::Duration(10.0));
   transformBroadcaster = new tf::TransformBroadcaster();  
+  
+  filteredPointCloudPublisher = n.advertise<sensor_msgs::PointCloud>("Cobot/Kinect/FilteredPointCloud", 1);
   
   while(ros::ok() && run){
     ros::spinOnce();
