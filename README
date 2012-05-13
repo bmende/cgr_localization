@@ -27,34 +27,36 @@ On other platforms, you will have to manually install the following packages:
 
 Run "make" in the cgr_localization folder OR run "rosmake cgr_localization" after adding the full path of the cgr_localization package to the ROS_PACKAGES_PATH environemt variable.
 
-4. Generate map visibility lists
-
-CGR localization uses analytic raycasts on vector maps for the observation functions. To speed up the analytic renders at runtime, visibility lists are pre-computed for the vector maps. To generate the visibility lists of the provided demo maps (to use with demo data), run the following commands: 
-./bin/pre_render -m"GHC7" -n8
-./bin/pre_render -m"NSH4" -n8
-
-5. Testing with demo data
+4. Testing with demo data
 
 The following demo data sets are available:
 
-CoBot2 in GHC7:
-Download the ROS bag file from http://data.cobotrobots.com/cgr_localization/cobot2_ghc7.bag
-Modify the file config/localization_parameters.cfg, line 9 to ' mapName = "GHC7"; ' (without the outer single quotes)
-CoBot2 in NSH4:
-Download the ROS bag file from http://data.cobotrobots.com/cgr_localization/cobot2_nsh4.bag
-Modify the file config/localization_parameters.cfg, line 9 to ' mapName = "NSH4"; ' (without the outer single quotes)
+CoBot2 in GHC7 (LIDAR)
+Download the ROS bag file from http://data.cobotrobots.com/cgr_localization/cobot2_ghc7_lidar.bag
+Modify the file config/localization_parameters.cfg, line 9 to mapName = "GHC7"; 
+
+CoBot2 in GHC7 (Kinect)
+Download the ROS bag file from http://data.cobotrobots.com/cgr_localization/cobot2_ghc7_kinect.bag
+Modify the file config/localization_parameters.cfg, line 9 to mapName = "GHC7"; 
+
+CoBot2 in NSH4 (LIDAR)
+Download the ROS bag file from http://data.cobotrobots.com/cgr_localization/cobot2_nsh4_lidar.bag
+Modify the file config/localization_parameters.cfg, line 9 to mapName = "NSH4"; 
 
 To run the code with the demo data:
 Use "roslaunch cgr_localization cgr_demo.launch" to run the localization code and display that on the bundled GUI), OR
 "roslaunch cgr_localization cgr_demo_rviz.launch" to run the localization code with rviz.
 Play back the data file with "rosbag play <bagfile.bag> --clock"
 
-6. Running on your own robot
+5. Running on your own robot
 
 To run cgr localization on your own robot, you need to generate a vector map of your environment. For an example vector map, see maps/GHC7/GHC7_vector.txt . Each entry in the vector map represents a line in the world, and is of the form:
 x1, y1, x2, y2 
 where x1, y1 is the start location and x2, y2 the end location of the line. The vector maps reside in the maps folder. For example, the map for "GHC7" resides in the file maps/GHC7/GHC7_vector.txt . Once the map is created, it needs to be added to maps/atlas.txt so that cgr_localization loads it on startup.
-The required ROS topics are "odom" of type nav_msgs/Odometry , and "scan" of type sensor_msgs/LaserScan
+CGR localization uses analytic raycasts on vector maps for the observation functions. To speed up the analytic renders at runtime, visibility lists are pre-computed for the vector maps. To generate the visibility lists for your map, run the following command:
+./bin/pre_render -m "YourMapName" [-n NumberOfThreads]
+e.g. ./bin/pre_render -m"GHC7" -n8
+The required ROS topics are "odom" of type nav_msgs/Odometry , "scan" of type sensor_msgs/LaserScan and/or "kinect_depth" of type sensor_msgs/Image (Raw 16-bit depth data gathered via libfreenect from the kinect)
 
 
 Publications
