@@ -1,0 +1,16 @@
+<map id="G" name="G">
+<area shape="rect" href="$vector__map_8h.html" title="C++ Interfaces: VectorMap, LineSection." alt="" coords="2107,83,2205,112"/>
+<area shape="rect" href="$geometry_8h_source.html" title="geometry.h" alt="" coords="1669,237,1755,267"/>
+<area shape="rect" href="$util_8h_source.html" title="util.h" alt="" coords="1887,392,1935,421"/>
+<area shape="rect" href="$terminal__utils_8h.html" title="Subroutines to spice up stdout." alt="" coords="1392,160,1501,189"/>
+<area shape="rect" href="$timer_8h_source.html" title="timer.h" alt="" coords="2136,237,2197,267"/>
+<area shape="rect" href="$popt__pp_8h_source.html" title="popt_pp.h" alt="" coords="2688,83,2765,112"/>
+<area shape="rect" href="$proghelp_8h_source.html" title="proghelp.h" alt="" coords="2373,160,2453,189"/>
+<area shape="rect" href="$configreader_8h_source.html" title="configreader.h" alt="" coords="2459,83,2563,112"/>
+<area shape="rect" href="$plane__filtering_8h.html" title="Interface to PlaneFiltering class, to perform plane filtering of 3D point clouds..." alt="" coords="2237,160,2349,189"/>
+<area shape="rect" href="$line_8h.html" title="C++ Interfaces: Line2d." alt="" coords="1675,160,1725,189"/>
+<area shape="rect" href="$triangle_8h.html" title="C++ Interfaces: Triangle3d." alt="" coords="1576,160,1651,189"/>
+<area shape="rect" href="$gvector_8h_source.html" title="gvector.h" alt="" coords="1879,315,1953,344"/>
+<area shape="rect" href="$sstring_8h_source.html" title="sstring.h" alt="" coords="2467,237,2539,267"/>
+<area shape="rect" href="$watch__files_8h_source.html" title="watch_files.h" alt="" coords="2528,160,2624,189"/>
+</map>

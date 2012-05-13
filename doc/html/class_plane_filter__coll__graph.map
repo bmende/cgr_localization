@@ -1,0 +1,5 @@
+<map id="G" name="G">
+<area shape="rect" href="$class_accumulative_timer.html" title="AccumulativeTimer" alt="" coords="5,5,139,35"/>
+<area shape="rect" href="$struct_plane_filter_1_1_plane_filter_params.html" title="Parameters for plane filtering." alt="" coords="163,5,360,35"/>
+<area shape="rect" href="$class_depth_cam.html" title="Generic Depth Camera Interface." alt="" coords="384,5,467,35"/>
+</map>

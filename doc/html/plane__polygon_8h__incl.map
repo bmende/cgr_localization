@@ -1,0 +1,9 @@
+<map id="G" name="G">
+<area shape="rect" href="$geometry_8h_source.html" title="geometry.h" alt="" coords="787,160,872,189"/>
+<area shape="rect" href="$quaternion__helper_8h.html" title="Helpers for integrating Eigen Quaternions with GVector classes." alt="" coords="617,83,751,112"/>
+<area shape="rect" href="$terminal__utils_8h.html" title="Subroutines to spice up stdout." alt="" coords="211,83,320,112"/>
+<area shape="rect" href="$timer_8h_source.html" title="timer.h" alt="" coords="1059,160,1120,189"/>
+<area shape="rect" href="$grahams__scan_8h_source.html" title="grahams_scan.h" alt="" coords="1072,83,1189,112"/>
+<area shape="rect" href="$gvector_8h_source.html" title="gvector.h" alt="" coords="627,237,701,267"/>
+<area shape="rect" href="$util_8h_source.html" title="util.h" alt="" coords="1208,315,1256,344"/>
+</map>

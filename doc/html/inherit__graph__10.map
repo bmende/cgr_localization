@@ -1,0 +1,5 @@
+<map id="G" name="G">
+<area shape="rect" href="$class_depth_cam.html" title="Generic Depth Camera Interface." alt="" coords="5,32,88,61"/>
+<area shape="rect" href="$class_kinect_open_n_i_depth_cam.html" title="Kinect Depth Camera to process depth images from OpenNI." alt="" coords="137,5,300,35"/>
+<area shape="rect" href="$class_kinect_raw_depth_cam.html" title="Raw Kinect Depth Camera to process raw depth images from libfreenect." alt="" coords="147,59,291,88"/>
+</map>

@@ -1,0 +1,7 @@
+<map id="G" name="G">
+<area shape="rect" href="$structfnusb__dev.html" title="fnusb_dev" alt="" coords="83,335,163,364"/>
+<area shape="rect" href="$structpacket__stream.html" title="packet_stream" alt="" coords="15,101,121,131"/>
+<area shape="rect" href="$structfnusb__isoc__stream.html" title="fnusb_isoc_stream" alt="" coords="57,435,188,464"/>
+<area shape="rect" href="$struct__freenect__context.html" title="_freenect_context" alt="" coords="145,101,271,131"/>
+<area shape="rect" href="$structfnusb__ctx.html" title="fnusb_ctx" alt="" coords="169,5,247,35"/>
+</map>

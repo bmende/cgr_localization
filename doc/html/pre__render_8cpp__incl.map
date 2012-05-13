@@ -1,0 +1,13 @@
+<map id="G" name="G">
+<area shape="rect" href="$vector__map_8h.html" title="C++ Interfaces: VectorMap, LineSection." alt="" coords="761,83,860,112"/>
+<area shape="rect" href="$terminal__utils_8h.html" title="Subroutines to spice up stdout." alt="" coords="485,160,595,189"/>
+<area shape="rect" href="$timer_8h_source.html" title="timer.h" alt="" coords="349,392,411,421"/>
+<area shape="rect" href="$popt__pp_8h_source.html" title="popt_pp.h" alt="" coords="1228,83,1305,112"/>
+<area shape="rect" href="$proghelp_8h_source.html" title="proghelp.h" alt="" coords="181,237,261,267"/>
+<area shape="rect" href="$geometry_8h_source.html" title="geometry.h" alt="" coords="789,237,875,267"/>
+<area shape="rect" href="$line_8h.html" title="C++ Interfaces: Line2d." alt="" coords="669,160,720,189"/>
+<area shape="rect" href="$triangle_8h.html" title="C++ Interfaces: Triangle3d." alt="" coords="901,160,976,189"/>
+<area shape="rect" href="$gvector_8h_source.html" title="gvector.h" alt="" coords="948,315,1023,344"/>
+<area shape="rect" href="$util_8h_source.html" title="util.h" alt="" coords="869,392,917,421"/>
+<area shape="rect" href="$sstring_8h_source.html" title="sstring.h" alt="" coords="180,392,252,421"/>
+</map>
