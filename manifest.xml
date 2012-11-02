@@ -1,5 +1,5 @@
 <package>
-  <description brief="cobot_linux">
+  <description brief="cgr_localization">
 
      CGR Localization
 
@@ -13,6 +13,7 @@
   <depend package="sensor_msgs"/>
   <depend package="rospy"/>
   <depend package="roscpp"/>
+  <depend package="rosbag"/>
   <depend package="visualization_msgs"/>
   <depend package="tf"/>
 
