@@ -231,8 +231,6 @@ int main(int argc, char** argv)
   }
   
   //========================= Welcome screen, Load map & log ========================
-  __attribute__ (unused) int sysReturn = system("clear\n");
-  
   ColourTerminal(TerminalUtils::TERMINAL_COL_GREEN,TerminalUtils::TERMINAL_COL_BLACK,TerminalUtils::TERMINAL_ATTR_BRIGHT);
   printf("\nVector Localization Pre-Render Optimization\n\n");
   ResetTerminal();

@@ -655,9 +655,6 @@ int main(int argc, char** argv)
   }
   
   //========================= Welcome screen, Load map & log ========================
-  if(debugLevel>=0)
-    __attribute__ (unused) int sysReturn = system("clear\n");
-  
   ColourTerminal(TerminalUtils::TERMINAL_COL_WHITE,TerminalUtils::TERMINAL_COL_BLACK,TerminalUtils::TERMINAL_ATTR_BRIGHT);
   printf("\nVector Localization\n\n");
   ResetTerminal();

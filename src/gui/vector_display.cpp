@@ -167,7 +167,7 @@ void VectorDisplay::wheelEvent(QWheelEvent* event)
 void VectorDisplay::keyPressEvent(QKeyEvent* event)
 {
   static const bool debug = false;
-  bool shiftKey = event->modifiers().testFlag(Qt::ShiftModifier);
+  // bool shiftKey = event->modifiers().testFlag(Qt::ShiftModifier);
   bool ctrlKey = event->modifiers().testFlag(Qt::ControlModifier);
   if(debug) printf("KeyPress: 0x%08X\n",event->key());
   if(event->key() == Qt::Key_Space)
