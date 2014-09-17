@@ -1,9 +1,22 @@
-<map id="G" name="G">
-<area shape="rect" href="$vector__map_8cpp.html" title="C++ Implementation: VectorMap, LineSection." alt="" coords="124,83,289,112"/>
-<area shape="rect" href="$vector__map_8h.html" title="C++ Interfaces: VectorMap, LineSection." alt="" coords="337,83,489,112"/>
-<area shape="rect" href="$localization__main_8cpp.html" title="Main Vector Localization program." alt="" coords="5,160,195,189"/>
-<area shape="rect" href="$pre__render_8cpp.html" title="A utility to pre&#45;render a map." alt="" coords="243,160,395,189"/>
-<area shape="rect" href="$vectorparticlefilter_8h.html" title="C++ Implementation: Particle, VectorLocalization." alt="" coords="419,160,597,189"/>
-<area shape="rect" href="$vector__display__main_8cpp.html" title="A graphical vector localization vizualizer." alt="" coords="621,160,829,189"/>
-<area shape="rect" href="$vectorparticlefilter_8cpp_source.html" title="src/cgr/vectorparticlefilter.cpp" alt="" coords="412,237,604,267"/>
+<map id="src/shared/math/line.h" name="src/shared/math/line.h">
+<area shape="rect" id="node2" href="$vector__map_8h.html" title="C++ Interfaces: VectorMap, LineSection. " alt="" coords="310,245,460,272"/>
+<area shape="rect" id="node9" href="$geometry_8h_source.html" title="src/shared/math/geometry.h" alt="" coords="621,80,803,107"/>
+<area shape="rect" id="node3" href="$vectorparticlefilter_8h.html" title="C++ Implementation: Particle, VectorLocalization. " alt="" coords="12,328,191,355"/>
+<area shape="rect" id="node4" href="$localization__main_8cpp.html" title="Main Vector Localization program. " alt="" coords="499,411,628,453"/>
+<area shape="rect" id="node6" href="$pre__render_8cpp.html" title="A utility to pre&#45;render a map. " alt="" coords="215,328,365,355"/>
+<area shape="rect" id="node7" href="$vector__display__main_8cpp.html" title="A graphical vector localization vizualizer. " alt="" coords="1210,321,1357,362"/>
+<area shape="rect" id="node8" href="$vector__map_8cpp.html" title="C++ Implementation: VectorMap, LineSection. " alt="" coords="391,328,555,355"/>
+<area shape="rect" id="node5" href="$vectorparticlefilter_8cpp_source.html" title="src/cgr/vectorparticlefilter.cpp" alt="" coords="5,419,197,445"/>
+<area shape="rect" id="node10" href="$grahams__scan_8h_source.html" title="src/fspf/grahams_scan.h" alt="" coords="569,163,733,189"/>
+<area shape="rect" id="node12" href="$plane__polygon_8h.html" title="C++ Interfaces: PlanePolygon. " alt="" coords="819,245,981,272"/>
+<area shape="rect" id="node13" href="$plane__filtering_8h.html" title="Interface to PlaneFiltering class, to perform plane filtering of 3D point clouds from depth images..." alt="" coords="631,328,789,355"/>
+<area shape="rect" id="node15" href="$kinect__main_8cpp.html" title="Publish 3D point cloud from the Kinect. " alt="" coords="910,419,1087,445"/>
+<area shape="rect" id="node17" href="$vector__display_8h.html" title="A GUI for Vector Localization; C++ Interface: VectorDisplay. " alt="" coords="1329,163,1487,189"/>
+<area shape="rect" id="node19" href="$quaternion__helper_8h.html" title="Helpers for integrating Eigen Quaternions with GVector classes. " alt="" coords="810,155,989,197"/>
+<area shape="rect" id="node20" href="$triangle_8h.html" title="C++ Interfaces: Triangle3d. " alt="" coords="271,163,443,189"/>
+<area shape="rect" id="node21" href="$extensions_8h.html" title="C++ Extensions. " alt="" coords="1066,163,1245,189"/>
+<area shape="rect" id="node11" href="$grahams__scan_8cpp_source.html" title="src/fspf/grahams_scan.cpp" alt="" coords="565,245,744,272"/>
+<area shape="rect" id="node16" href="$plane__polygon_8cpp_source.html" title="src/fspf/plane_polygon.cpp" alt="" coords="815,328,991,355"/>
+<area shape="rect" id="node14" href="$plane__filtering_8cpp.html" title="PlaneFiltering Implementation. " alt="" coords="653,419,827,445"/>
+<area shape="rect" id="node18" href="$vector__display_8cpp_source.html" title="src/gui/vector_display.cpp" alt="" coords="1322,245,1493,272"/>
 </map>

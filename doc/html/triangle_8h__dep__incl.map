@@ -1,9 +1,9 @@
-<map id="G" name="G">
-<area shape="rect" href="$vector__map_8cpp.html" title="C++ Implementation: VectorMap, LineSection." alt="" coords="124,83,289,112"/>
-<area shape="rect" href="$vector__map_8h.html" title="C++ Interfaces: VectorMap, LineSection." alt="" coords="337,83,489,112"/>
-<area shape="rect" href="$localization__main_8cpp.html" title="Main Vector Localization program." alt="" coords="5,160,195,189"/>
-<area shape="rect" href="$pre__render_8cpp.html" title="A utility to pre&#45;render a map." alt="" coords="243,160,395,189"/>
-<area shape="rect" href="$vectorparticlefilter_8h.html" title="C++ Implementation: Particle, VectorLocalization." alt="" coords="419,160,597,189"/>
-<area shape="rect" href="$vector__display__main_8cpp.html" title="A graphical vector localization vizualizer." alt="" coords="621,160,829,189"/>
-<area shape="rect" href="$vectorparticlefilter_8cpp_source.html" title="src/cgr/vectorparticlefilter.cpp" alt="" coords="412,237,604,267"/>
+<map id="src/shared/math/triangle.h" name="src/shared/math/triangle.h">
+<area shape="rect" id="node2" href="$vector__map_8h.html" title="C++ Interfaces: VectorMap, LineSection. " alt="" coords="311,80,461,107"/>
+<area shape="rect" id="node3" href="$vectorparticlefilter_8h.html" title="C++ Implementation: Particle, VectorLocalization. " alt="" coords="108,163,287,189"/>
+<area shape="rect" id="node4" href="$localization__main_8cpp.html" title="Main Vector Localization program. " alt="" coords="5,246,135,287"/>
+<area shape="rect" id="node6" href="$pre__render_8cpp.html" title="A utility to pre&#45;render a map. " alt="" coords="311,163,461,189"/>
+<area shape="rect" id="node7" href="$vector__display__main_8cpp.html" title="A graphical vector localization vizualizer. " alt="" coords="486,155,633,197"/>
+<area shape="rect" id="node8" href="$vector__map_8cpp.html" title="C++ Implementation: VectorMap, LineSection. " alt="" coords="659,163,823,189"/>
+<area shape="rect" id="node5" href="$vectorparticlefilter_8cpp_source.html" title="src/cgr/vectorparticlefilter.cpp" alt="" coords="160,253,352,280"/>
 </map>

@@ -1,9 +1,11 @@
-<map id="G" name="G">
-<area shape="rect" href="$geometry_8h_source.html" title="geometry.h" alt="" coords="787,160,872,189"/>
-<area shape="rect" href="$quaternion__helper_8h.html" title="Helpers for integrating Eigen Quaternions with GVector classes." alt="" coords="617,83,751,112"/>
-<area shape="rect" href="$terminal__utils_8h.html" title="Subroutines to spice up stdout." alt="" coords="211,83,320,112"/>
-<area shape="rect" href="$timer_8h_source.html" title="timer.h" alt="" coords="1059,160,1120,189"/>
-<area shape="rect" href="$grahams__scan_8h_source.html" title="grahams_scan.h" alt="" coords="1072,83,1189,112"/>
-<area shape="rect" href="$gvector_8h_source.html" title="gvector.h" alt="" coords="627,237,701,267"/>
-<area shape="rect" href="$util_8h_source.html" title="util.h" alt="" coords="1208,315,1256,344"/>
+<map id="src/fspf/plane_polygon.h" name="src/fspf/plane_polygon.h">
+<area shape="rect" id="node9" href="$geometry_8h_source.html" title="geometry.h" alt="" coords="792,155,877,181"/>
+<area shape="rect" id="node19" href="$quaternion__helper_8h.html" title="Helpers for integrating Eigen Quaternions with GVector classes. " alt="" coords="557,80,691,107"/>
+<area shape="rect" id="node22" href="$terminal__utils_8h.html" title="Subroutines to spice up stdout. " alt="" coords="215,80,324,107"/>
+<area shape="rect" id="node24" href="$timer_8h_source.html" title="timer.h" alt="" coords="1059,155,1120,181"/>
+<area shape="rect" id="node30" href="$grahams__scan_8h_source.html" title="grahams_scan.h" alt="" coords="1053,80,1169,107"/>
+<area shape="rect" id="node11" href="$gvector_8h_source.html" title="gvector.h" alt="" coords="625,304,699,331"/>
+<area shape="rect" id="node16" href="$line_8h.html" title="C++ Interfaces: Line2d. " alt="" coords="501,229,552,256"/>
+<area shape="rect" id="node18" href="$geomalgo_8h_source.html" title="geomalgo.h" alt="" coords="577,229,665,256"/>
+<area shape="rect" id="node13" href="$util_8h_source.html" title="util.h" alt="" coords="1295,379,1344,405"/>
 </map>

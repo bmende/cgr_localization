@@ -1,5 +1,6 @@
-<map id="G" name="G">
-<area shape="rect" href="$geometry_8h_source.html" title="geometry.h" alt="" coords="77,83,163,112"/>
-<area shape="rect" href="$gvector_8h_source.html" title="gvector.h" alt="" coords="268,160,343,189"/>
-<area shape="rect" href="$util_8h_source.html" title="util.h" alt="" coords="220,237,268,267"/>
+<map id="src/shared/math/line.h" name="src/shared/math/line.h">
+<area shape="rect" id="node3" href="$geometry_8h_source.html" title="geometry.h" alt="" coords="85,80,171,107"/>
+<area shape="rect" id="node6" href="$gvector_8h_source.html" title="gvector.h" alt="" coords="244,229,317,256"/>
+<area shape="rect" id="node13" href="$geomalgo_8h_source.html" title="geomalgo.h" alt="" coords="207,155,295,181"/>
+<area shape="rect" id="node8" href="$util_8h_source.html" title="util.h" alt="" coords="358,304,407,331"/>
 </map>

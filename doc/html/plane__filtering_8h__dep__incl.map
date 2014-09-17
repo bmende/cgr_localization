@@ -1,4 +1,5 @@
-<map id="G" name="G">
-<area shape="rect" href="$localization__main_8cpp.html" title="Main Vector Localization program." alt="" coords="5,83,195,112"/>
-<area shape="rect" href="$kinect__main_8cpp.html" title="Publish 3D point cloud from the Kinect." alt="" coords="243,83,419,112"/>
+<map id="src/fspf/plane_filtering.h" name="src/fspf/plane_filtering.h">
+<area shape="rect" id="node2" href="$localization__main_8cpp.html" title="Main Vector Localization program. " alt="" coords="5,81,135,122"/>
+<area shape="rect" id="node3" href="$plane__filtering_8cpp.html" title="PlaneFiltering Implementation. " alt="" coords="160,88,333,115"/>
+<area shape="rect" id="node4" href="$kinect__main_8cpp.html" title="Publish 3D point cloud from the Kinect. " alt="" coords="358,88,535,115"/>
 </map>

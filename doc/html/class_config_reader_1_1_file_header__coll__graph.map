@@ -1,5 +1,5 @@
-<map id="G" name="G">
-<area shape="rect" href="$class_simple_string.html" title="SimpleString\&lt; char \&gt;" alt="" coords="5,101,149,131"/>
-<area shape="rect" href="$class_watch_files_1_1_watch.html" title="WatchFiles::Watch" alt="" coords="173,101,301,131"/>
-<area shape="rect" href="$class_watch_files.html" title="WatchFiles" alt="" coords="195,5,280,35"/>
+<map id="ConfigReader::FileHeader" name="ConfigReader::FileHeader">
+<area shape="rect" id="node2" href="$class_simple_string.html" title="SimpleString\&lt; char \&gt;" alt="" coords="5,96,147,123"/>
+<area shape="rect" id="node3" href="$class_watch_files_1_1_watch.html" title="WatchFiles::Watch" alt="" coords="171,96,300,123"/>
+<area shape="rect" id="node4" href="$class_watch_files.html" title="WatchFiles" alt="" coords="193,5,279,32"/>
 </map>

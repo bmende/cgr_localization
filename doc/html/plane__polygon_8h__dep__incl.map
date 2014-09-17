@@ -1,6 +1,7 @@
-<map id="G" name="G">
-<area shape="rect" href="$plane__filtering_8h.html" title="Interface to PlaneFiltering class, to perform plane filtering of 3D point clouds..." alt="" coords="135,83,295,112"/>
-<area shape="rect" href="$plane__polygon_8cpp_source.html" title="src/fspf/plane_polygon.cpp" alt="" coords="319,83,495,112"/>
-<area shape="rect" href="$localization__main_8cpp.html" title="Main Vector Localization program." alt="" coords="5,160,195,189"/>
-<area shape="rect" href="$kinect__main_8cpp.html" title="Publish 3D point cloud from the Kinect." alt="" coords="243,160,419,189"/>
+<map id="src/fspf/plane_polygon.h" name="src/fspf/plane_polygon.h">
+<area shape="rect" id="node2" href="$plane__filtering_8h.html" title="Interface to PlaneFiltering class, to perform plane filtering of 3D point clouds from depth images..." alt="" coords="167,80,325,107"/>
+<area shape="rect" id="node6" href="$plane__polygon_8cpp_source.html" title="src/fspf/plane_polygon.cpp" alt="" coords="351,80,527,107"/>
+<area shape="rect" id="node3" href="$localization__main_8cpp.html" title="Main Vector Localization program. " alt="" coords="5,155,135,197"/>
+<area shape="rect" id="node4" href="$plane__filtering_8cpp.html" title="PlaneFiltering Implementation. " alt="" coords="160,163,333,189"/>
+<area shape="rect" id="node5" href="$kinect__main_8cpp.html" title="Publish 3D point cloud from the Kinect. " alt="" coords="358,163,535,189"/>
 </map>

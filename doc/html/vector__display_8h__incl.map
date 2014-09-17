@@ -1,5 +1,7 @@
-<map id="G" name="G">
-<area shape="rect" href="$geometry_8h_source.html" title="geometry.h" alt="" coords="595,83,680,112"/>
-<area shape="rect" href="$gvector_8h_source.html" title="gvector.h" alt="" coords="640,160,715,189"/>
-<area shape="rect" href="$util_8h_source.html" title="util.h" alt="" coords="801,237,849,267"/>
+<map id="src/gui/vector_display.h" name="src/gui/vector_display.h">
+<area shape="rect" id="node8" href="$geometry_8h_source.html" title="geometry.h" alt="" coords="607,80,692,107"/>
+<area shape="rect" id="node11" href="$gvector_8h_source.html" title="gvector.h" alt="" coords="652,229,725,256"/>
+<area shape="rect" id="node18" href="$line_8h.html" title="C++ Interfaces: Line2d. " alt="" coords="727,155,779,181"/>
+<area shape="rect" id="node20" href="$geomalgo_8h_source.html" title="geomalgo.h" alt="" coords="564,155,652,181"/>
+<area shape="rect" id="node13" href="$util_8h_source.html" title="util.h" alt="" coords="774,304,823,331"/>
 </map>

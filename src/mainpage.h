@@ -27,13 +27,13 @@
 * @section test 4. Testing with demo data
 * The following demo data sets are available:
 * -# CoBot2 in GHC7 (LIDAR)
-*   - Download the ROS bag file from http://data.cobotrobots.com/cgr_localization/cobot2_ghc7_lidar.bag
+*   - Download the ROS bag file from http://cobotrobots.com/data/cgr_localization/cobot2_ghc7_lidar.bag
 *   - Modify the file config/localization_parameters.cfg, line 3 to @verbatim mapName = "GHC7"; @endverbatim
 * -# CoBot2 in GHC7 (Kinect)
-*   - Download the ROS bag file from http://data.cobotrobots.com/cgr_localization/cobot2_ghc7_kinect.bag
+*   - Download the ROS bag file from http://cobotrobots.com/data/cgr_localization/cobot2_ghc7_kinect.bag
 *   - Modify the file config/localization_parameters.cfg, line 3 to @verbatim mapName = "GHC7"; @endverbatim
 * -# CoBot2 in NSH4 (LIDAR)
-*   - Download the ROS bag file from http://data.cobotrobots.com/cgr_localization/cobot2_nsh4_lidar.bag
+*   - Download the ROS bag file from http://cobotrobots.com/data/cgr_localization/cobot2_nsh4_lidar.bag
 *   - Modify the file config/localization_parameters.cfg, line 3 to @verbatim mapName = "NSH4"; @endverbatim
 *
 * To run the code with the demo data:

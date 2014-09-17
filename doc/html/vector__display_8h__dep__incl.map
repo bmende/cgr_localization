@@ -1,3 +1,4 @@
-<map id="G" name="G">
-<area shape="rect" href="$vector__display__main_8cpp.html" title="A graphical vector localization vizualizer." alt="" coords="5,83,213,112"/>
+<map id="src/gui/vector_display.h" name="src/gui/vector_display.h">
+<area shape="rect" id="node2" href="$vector__display_8cpp_source.html" title="src/gui/vector_display.cpp" alt="" coords="5,88,176,115"/>
+<area shape="rect" id="node3" href="$vector__display__main_8cpp.html" title="A graphical vector localization vizualizer. " alt="" coords="201,81,348,122"/>
 </map>
