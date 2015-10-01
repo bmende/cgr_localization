@@ -28,24 +28,24 @@ template <> vector3d<float> vector3d<float>::transform(const matrix3d<float> &M)
 {
   float _x, _y, _z;
   __m128 v1, v2, rx, ry, rz;
-  
+
   v1 = _mm_load_ps(&coefficients[0]);
   v2 = _mm_load_ps(&M.elements[0]);
   rx = _mm_dp_ps(v1,v2,0xF1);
-  
-  
+
+
   v1 = _mm_load_ps(&coefficients[0]);
   v2 = _mm_load_ps(&M.elements[4]);
   ry = _mm_dp_ps(v1,v2,0xF1);
-  
+
   v1 = _mm_load_ps(&coefficients[0]);
   v2 = _mm_load_ps(&M.elements[8]);
   rz = _mm_dp_ps(v1,v2,0xF1);
-  
+
   _mm_store_ss(&_x,rx);
   _mm_store_ss(&_y,ry);
   _mm_store_ss(&_z,rz);
-  
+
   vector3d<float> q;
   q.set(_x,_y,_z);
   return q;
@@ -53,12 +53,12 @@ template <> vector3d<float> vector3d<float>::transform(const matrix3d<float> &M)
 
 template <> float vector3d<float>::sqlength() const
 {
-  return sse_dot_product<float>(coefficients,coefficients,0x71);
+  return sse_dot_product<float>(coefficients,coefficients,0x71u);
 }
 
 template <> float vector3d<float>::dot(const vector3d<float> p) const
 {
-  return sse_dot_product<float>(coefficients,p.coefficients,0x71);
+  return sse_dot_product<float>(coefficients,p.coefficients,0x71u);
 }
 
 #endif

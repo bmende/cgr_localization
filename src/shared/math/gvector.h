@@ -28,7 +28,7 @@
 #define GVECTOR_SSE_OPTIMIZATIONS
 
 #define VECTOR_TEM \
-template <class num> 
+template <class num>
 
 namespace GVector {
 
@@ -70,7 +70,7 @@ template <> inline double sse_sqrt<double>(double xin)
 }
 
 template <typename num>
-inline num sse_dot_product(const num* fv1, const num* fv2, const int mask)
+inline num sse_dot_product(const num* fv1, const num* fv2, const uint8_t mask)
 {
   __m128 v1 = _mm_set_ps(float(fv1[3]),float(fv1[2]),float(fv1[1]),float(fv1[0]));
   __m128 v2 = _mm_set_ps(float(fv2[3]),float(fv2[2]),float(fv2[1]),float(fv2[0]));
@@ -81,7 +81,9 @@ inline num sse_dot_product(const num* fv1, const num* fv2, const int mask)
 }
 
 template <>
-inline float sse_dot_product(const float* fv1, const float* fv2, const int mask)
+inline float sse_dot_product(const float* fv1,
+                             const float* fv2,
+                             const uint8_t mask)
 {
   __m128 v1 = _mm_load_ps(fv1);
   __m128 v2 = _mm_load_ps(fv2);
@@ -92,7 +94,9 @@ inline float sse_dot_product(const float* fv1, const float* fv2, const int mask)
 }
 
 template <>
-inline double sse_dot_product(const double* fv1, const double* fv2, const int mask)
+inline double sse_dot_product(const double* fv1,
+                              const double* fv2,
+                              const uint8_t mask)
 {
   __m128d v1 = _mm_load_pd(fv1);
   __m128d v2 = _mm_load_pd(fv2);
@@ -143,7 +147,7 @@ public:
     };
     num elements[16];
   }__attribute__ ((aligned (16)));
-  
+
   void setxyzRotations(num rx, num ry, num rz);
   void xyzRotationAndTransformation(num rx, num ry, num rz, vector3d<num> t);
   matrix3d<num> operator*(const matrix3d< num > &M2) const;
@@ -158,7 +162,7 @@ template <class num> void matrix3d<num>::setxyzRotations(num rx, num ry, num rz)
   double sy = sin(ry);
   double cz = cos(rz);
   double sz = sin(rz);
-  
+
   m11 = cz*cy;            m12 = -sz;        m13 = cz*sy;            m14 = 0.0;
   m21 = cx*sz*cy+sx*sy;   m22 = cx*cz;      m23 = cx*sz*sy-sx*cy;   m24 = 0.0;
   m31 = sx*sz*cy-cx*sy;   m32 = sx*cz;      m33 = cx*cy;            m34 = 0.0;
@@ -173,7 +177,7 @@ template <class num> void matrix3d<num>::xyzRotationAndTransformation(num rx, nu
   double sy = sin(ry);
   double cz = cos(rz);
   double sz = sin(rz);
-  
+
   m11 = cz*cy;            m12 = -sz;        m13 = cz*sy;            m14 = t.x;
   m21 = cx*sz*cy+sx*sy;   m22 = cx*cz;      m23 = cx*sz*sy-sx*cy;   m24 = t.y;
   m31 = sx*sz*cy-cx*sy;   m32 = sx*cz;      m33 = cx*cy;            m34 = t.z;
@@ -185,29 +189,29 @@ template <class num> matrix3d<num> matrix3d<num>::operator*(const matrix3d< num 
   #define m1(i,j) m ## i ## j
   #define m2(i,j) M2.m ## i ## j
   #define m3(i,j) M3.m ## i ## j
-  
+
   matrix3d<num> M3;
-  
+
   m3(1,1) = m1(1,1)*m2(1,1) + m1(1,2)*m2(2,1) + m1(1,3)*m2(3,1) + m1(1,4)*m2(4,1);
   m3(1,2) = m1(1,1)*m2(1,2) + m1(1,2)*m2(2,2) + m1(1,3)*m2(3,2) + m1(1,4)*m2(4,2);
   m3(1,3) = m1(1,1)*m2(1,3) + m1(1,2)*m2(2,3) + m1(1,3)*m2(3,3) + m1(1,4)*m2(4,3);
   m3(1,4) = m1(1,1)*m2(1,4) + m1(1,2)*m2(2,4) + m1(1,3)*m2(3,4) + m1(1,4)*m2(4,4);
-  
+
   m3(2,1) = m1(2,1)*m2(1,1) + m1(2,2)*m2(2,1) + m1(2,3)*m2(3,1) + m1(2,4)*m2(4,1);
   m3(2,2) = m1(2,1)*m2(1,2) + m1(2,2)*m2(2,2) + m1(2,3)*m2(3,2) + m1(2,4)*m2(4,2);
   m3(2,3) = m1(2,1)*m2(1,3) + m1(2,2)*m2(2,3) + m1(2,3)*m2(3,3) + m1(2,4)*m2(4,3);
   m3(2,4) = m1(2,1)*m2(1,4) + m1(2,2)*m2(2,4) + m1(2,3)*m2(3,4) + m1(2,4)*m2(4,4);
-  
+
   m3(3,1) = m1(3,1)*m2(1,1) + m1(3,2)*m2(2,1) + m1(3,3)*m2(3,1) + m1(3,4)*m2(4,1);
   m3(3,2) = m1(3,1)*m2(1,2) + m1(3,2)*m2(2,2) + m1(3,3)*m2(3,2) + m1(3,4)*m2(4,2);
   m3(3,3) = m1(3,1)*m2(1,3) + m1(3,2)*m2(2,3) + m1(3,3)*m2(3,3) + m1(3,4)*m2(4,3);
   m3(3,4) = m1(3,1)*m2(1,4) + m1(3,2)*m2(2,4) + m1(3,3)*m2(3,4) + m1(3,4)*m2(4,4);
-  
+
   m3(4,1) = m1(4,1)*m2(1,1) + m1(4,2)*m2(2,1) + m1(4,3)*m2(3,1) + m1(4,4)*m2(4,1);
   m3(4,2) = m1(4,1)*m2(1,2) + m1(4,2)*m2(2,2) + m1(4,3)*m2(3,2) + m1(4,4)*m2(4,2);
   m3(4,3) = m1(4,1)*m2(1,3) + m1(4,2)*m2(2,3) + m1(4,3)*m2(3,3) + m1(4,4)*m2(4,3);
   m3(4,4) = m1(4,1)*m2(1,4) + m1(4,2)*m2(2,4) + m1(4,3)*m2(3,4) + m1(4,4)*m2(4,4);
-  
+
   return M3;
 }
 
@@ -220,7 +224,7 @@ template <class num> matrix3d<num> matrix3d<num>::transpose() const
   swap(M2.m23,M2.m32);
   swap(M2.m24,M2.m42);
   swap(M2.m34,M2.m43);
-  
+
   return M2;
 }
 
@@ -326,7 +330,7 @@ template <> vector3d<float> vector3d<float>::transform(const matrix3d<float> &M)
 VECTOR_TEM num vector3d<num>::length() const
 {
   return(mysqrt<num>(x*x + y*y + z*z));
-  
+
 }
 
 VECTOR_TEM num vector3d<num>::sqlength() const
@@ -347,11 +351,11 @@ VECTOR_TEM vector3d<num> vector3d<num>::norm() const
 #ifdef GVECTOR_SSE_OPTIMIZATIONS
   vector3d<num> p;
   num lInv = 1.0/(this->length());
-  
+
   p.x = x * lInv;
   p.y = y * lInv;
   p.z = z * lInv;
-  
+
   return(p);
 #else
   vector3d<num> p;
@@ -370,7 +374,7 @@ VECTOR_TEM vector3d<num> vector3d<num>::norm(const num len) const
 {
 #ifdef GVECTOR_SSE_OPTIMIZATIONS
   vector3d<num> p;
-  
+
   __m128 f = _mm_set1_ps(((float)len) / (this->length()));
   __m128 pm = _mm_set_ps((float)x,(float)y,(float)z,0.0f);
   pm = _mm_mul_ps(pm,f);
@@ -379,7 +383,7 @@ VECTOR_TEM vector3d<num> vector3d<num>::norm(const num len) const
   p.x = x2[3];
   p.y = x2[2];
   p.z = x2[1];
-  
+
   return(p);
 #else
   vector3d<num> p;
@@ -623,7 +627,7 @@ VECTOR_TEM vector3d<num> vector3d<num>::transform(const matrix3d< num >& M) cons
   q.x = M.m11*x + M.m12*y + M.m13*z + M.m14*w;
   q.y = M.m21*x + M.m22*y + M.m23*z + M.m24*w;
   q.z = M.m31*x + M.m32*y + M.m33*z + M.m34*w;
-  
+
   return(q);
 }
 
@@ -675,12 +679,12 @@ VECTOR_TEM vector3d<num> vector3d<num>::rotate_z(const double a) const
   return(q);
 }
 
-VECTOR_TEM double shortest_angle(const vector3d<num> a,const vector3d<num> b) 
+VECTOR_TEM double shortest_angle(const vector3d<num> a,const vector3d<num> b)
 {
   return(acos(std::max(-1.0,std::min(1.0,dot(a,b)/(a.length()*b.length())))));
 }
 
-VECTOR_TEM vector3d<num> shortest_axis(const vector3d<num> a,const vector3d<num> b) 
+VECTOR_TEM vector3d<num> shortest_axis(const vector3d<num> a,const vector3d<num> b)
 {
   return(cross(a,b).norm());
 }
@@ -784,7 +788,7 @@ public:
   /// copy constructor from compatible classes
   template <class vec> vector2d<num> &operator=(vec p)
     {set(p.x,p.y); return(*this);}
-    
+
   /// element accessor
   num &operator[](int idx)
     {return(((num*)this)[idx]);}
