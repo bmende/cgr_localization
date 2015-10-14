@@ -19,3 +19,5 @@ clean:
 cleanup_cache:
 	cd $(buildDir) && rm -rf *
 
+documentation: Doxyfile
+	doxygen Doxyfile
