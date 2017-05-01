@@ -56,11 +56,11 @@ Particle filter for vector localization
 **/
 
 class VectorLocalization2D{
-  
+
 public:
   typedef struct {
     double tStamp;
-    
+
     //Parameters
     /// Alpha1 = Error in angle per delta in angle
     float Alpha1;
@@ -68,10 +68,10 @@ public:
     float Alpha2;
     /// Alpha3 = Error in translation per delta in translation
     float Alpha3;
-    
+
     float kernelSize;
   } MotionModelParams;
-  
+
   class LidarParams{
     public:
     float* laserScan;
@@ -85,7 +85,7 @@ public:
     Vector2f laserToBaseTrans;
     Matrix2f laserToBaseRot;
     vector<Vector2f> scanHeadings;
-    
+
     int numSteps;
     float etaAngle;
     float etaLoc;
@@ -95,27 +95,27 @@ public:
     float minCosAngleError;
     float correspondenceMargin;
     float minRefineFraction;
-    
+
     float logObstacleProb; //Probability of an obstacle
     float logShortHitProb;
     float logOutOfRangeProb;
     float lidarStdDev;
     float correlationFactor;
-    
+
     float kernelSize;
-    
+
     void initialize();
   };
-  
+
   class PointCloudParams{
-    public: 
+    public:
     double tStamp;
     float minRange;
     float maxRange;
     float fieldOfView;
     vector<vector2f> pointCloud;
     vector<vector2f> pointNormals;
-    
+
     //Tunable parameters, MUST be set!
     float logObstacleProb; //Probability of an obstacle
     float logShortHitProb;
@@ -123,7 +123,7 @@ public:
     float attractorRange;
     float stdDev;
     float corelationFactor;
-    
+
     int numSteps;
     int minPoints;
     float etaAngle;
@@ -133,11 +133,11 @@ public:
     float minCosAngleError;
     float correspondenceMargin;
     float minRefineFraction;
-    
+
     float kernelSize;
   };
-  
-  
+
+
   typedef struct {
     double lastRunTime;
     double runTime;
@@ -147,13 +147,13 @@ public:
     float stageRWeights;
     float meanSqError;
   } EvalValues;
-  
+
   enum Resample{
     NaiveResampling,
     LowVarianceResampling,
     SensorResettingResampling,
   };
-  
+
 protected:
   //Current state
   VectorMap* currentMap;
@@ -167,10 +167,10 @@ protected:
   vector<float> samplingDensity;
   vector2f lastDistanceMoved;
   float lastAngleTurned;
-  
+
   string mapsFolder;
   vector<VectorMap> maps;
-  
+
   //These are class-wide only so that they can be accessed for debugging purposes
   vector<float> stage0Weights;
   vector<float> stageRWeights;
@@ -181,7 +181,7 @@ protected:
   vector<line2f> debugLines;
   vector<int> lineCorrespondences;
   vector2f locCorrectionP0, locCorrectionP1;
-  
+
   //Statistics of performance
   int numUnrefinedParticlesSampled;
   int numRefinedParticlesSampled;
@@ -191,11 +191,11 @@ protected:
   double updateTime;
   EvalValues pointCloudEval;
   EvalValues laserEval;
-    
+
 public:
   VectorLocalization2D(const char* _mapsFolder);
   VectorLocalization2D(int _numParticles);
-  
+
   /// Sets Particle Filter LIDAR parameters
   void setParams(MotionModelParams _predictParams, LidarParams _lidarUpdateParams);
   /// Loads All the floor maps listed in atlas.txt
@@ -214,17 +214,17 @@ public:
   void updatePointCloud(vector< vector2f >& pointCloud, vector< vector2f >& pointNormals, const VectorLocalization2D::MotionModelParams& motionParams, const VectorLocalization2D::PointCloudParams& pointCloudParams);
   /// Resample distribution
   void resample(Resample type = LowVarianceResampling);
-  
+
   /// Predict particle motion by sampling from the motion model
   void predictParticle(Particle2D& p, float dx, float dy, float dtheta, const VectorLocalization2D::MotionModelParams& motionParams);
   /// Refine a single location hypothesis based on a LIDAR observation
   void refineLocationLidar(vector2f& loc, float& angle, float& initialWeight, float& finalWeight, const VectorLocalization2D::LidarParams& lidarParams, const std::vector< Vector2f >& laserPoints);
   /// Refine a single location hypothesis based on a Point Cloud observation
   void refineLocationPointCloud(vector2f& loc, float& angle, float& initialWeight, float& finalWeight, const vector< vector2f >& pointCloud, const vector< vector2f >& pointNormals, const VectorLocalization2D::PointCloudParams& pointCloudParams);
-  
+
   void computeParticleWeights(vector2f deltaLoc, float deltaAngle, vector2f minLocStdDev, float minAngleStdDev, const VectorLocalization2D::MotionModelParams& motionParams);
-  
-  /// Attractor function used for refining location hypotheses 
+
+  /// Attractor function used for refining location hypotheses
   inline Vector2f attractorFunction(line2f l, Vector2f p, float attractorRange, float margin = 0);
   /// Observation function for a single ray
   inline Vector2f observationFunction(line2f l, Vector2f p);
@@ -260,7 +260,7 @@ public:
   void saveProfilingStats(FILE* f);
   /// Compile lists of drawing primitives that can be visualized for debugging purposes
   void drawDisplay(vector<float> &lines_p1x, vector<float> &lines_p1y, vector<float> &lines_p2x, vector<float> &lines_p2y, vector<uint32_t> &lines_color,
-                   vector<float> &points_x, vector<float> &points_y, vector<uint32_t> &points_color, 
+                   vector<float> &points_x, vector<float> &points_y, vector<uint32_t> &points_color,
                    vector<float> &circles_x, vector<float> &circles_y, vector<uint32_t> &circles_color, float scale=1.0);
   /// Return evaluation values
   void getEvalValues(EvalValues &_laserEval, EvalValues &_pointCloudEval);
@@ -273,4 +273,3 @@ public:
 };
 
 #endif //VECTORPARTICLEFILTER_H
-
