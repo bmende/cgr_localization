@@ -1062,8 +1062,10 @@ void VectorLocalization2D::lowVarianceResample()
     totalWeight += particlesRefined[i].weight;
     if(i<numParticles)
       refinedImportanceWeights += particlesRefined[i].weight;
-    else
+    else {
+      printf("this happened?\n");
       unrefinedImportanceWeights += particlesRefined[i].weight;
+    }
   }
 
   if(totalWeight<FLT_MIN){
@@ -1094,7 +1096,7 @@ void VectorLocalization2D::lowVarianceResample()
 
     newParticles[i] = particlesRefined[j];
     newParticles[i].weight = newWeight;
-    if(particlesRefined[i].weight < FLT_MIN){
+    if(particlesRefined[i].weight < FLT_MIN){ // should be j instead?????
       //This particle was depleted: add replacement noise
       vector2f deltaLoc = vector2f(frand(-1.0,1.0),frand(-1.0,1.0))*0.05;
       float deltaAngle = frand(-1.0,1.0)*RAD(5.0);
@@ -1107,6 +1109,105 @@ void VectorLocalization2D::lowVarianceResample()
 
   particles = newParticles;
 }
+
+void VectorLocalization2D::kldResample(KLDParams kldParams)
+{
+  vector<Particle2D> newParticles;
+  float totalWeight = 0.0;
+  float newWeight = 1.0/float(numParticles);
+  int numRefinedParticles = (int) particlesRefined.size();
+
+  refinedImportanceWeights = unrefinedImportanceWeights = 0.0;
+  for(int i=0; i<numRefinedParticles; i++){
+    //Get rid of particles with undefined weights
+    if(isnan(particlesRefined[i].weight) || isinf(particlesRefined[i].weight) || particlesRefined[i].weight<0.0)
+      particlesRefined[i].weight = 0.0;
+    totalWeight += particlesRefined[i].weight;
+    if(i<numParticles)
+      refinedImportanceWeights += particlesRefined[i].weight;
+    else {
+      printf("this happened?\n");
+      unrefinedImportanceWeights += particlesRefined[i].weight;
+    }
+  }
+
+  if(totalWeight<FLT_MIN){
+    //TerminalWarning("Particles have zero total weight!");
+    for(int i=0; i<numParticles; i++){
+      particles[i].weight = newWeight;
+    }
+    return;
+    //exit(0);
+  }
+
+  float weightIncrement = totalWeight/float(numParticles);
+  if(weightIncrement<FLT_MIN) TerminalWarning("Particle weights less than float precision");
+
+  numRefinedParticlesSampled = numUnrefinedParticlesSampled = 0;
+  float x = frand(0.0f,totalWeight);
+  int j=0;
+  float f=particlesRefined[0].weight;
+
+  vector< vector <double> > bins; //this will tell us if we need to increase the number of particles!
+  int num_filled_bins = 0;
+  int num_particles_needed = 0;
+
+  numParticles = 0;
+  bool continue_condition = false;
+  int i = 0;
+  do {
+    while(f<x){
+      j = (j+1)%numRefinedParticles;
+      f += particlesRefined[j].weight;
+    }
+    if(j<numParticles)
+      numRefinedParticlesSampled++;
+    else
+      numUnrefinedParticlesSampled++;
+
+    newParticles.push_back(particlesRefined[j]);
+    newParticles[i].weight = newWeight;
+    if(particlesRefined[j].weight < FLT_MIN){ // pretty sure this should be j, not i.
+      //This particle was depleted: add replacement noise
+      vector2f deltaLoc = vector2f(frand(-1.0,1.0),frand(-1.0,1.0))*0.05;
+      float deltaAngle = frand(-1.0,1.0)*RAD(5.0);
+      newParticles[i].loc += deltaLoc;
+      newParticles[i].lastLoc += deltaLoc;
+      newParticles[i].angle += deltaAngle;
+    }
+    x += weightIncrement;
+
+    // now that we have picked a new particle, we need to know if it is in a new bin.
+    vector<double> current_bin;
+    current_bin.push_back(floor(newParticles[i].loc.x / kldParams.bin_size));
+    current_bin.push_back(floor(newParticles[i].loc.y / kldParams.bin_size));
+    current_bin.push_back(floor(newParticles[i].angle / kldParams.angular_bin_size));
+    bool new_bin = true;
+    for (int b=0; b < bins.size(); b++) {
+      if (current_bin == bins[b])
+        new_bin = false;
+    }
+    if (new_bin) {
+      bins.push_back(current_bin);
+      num_filled_bins += 1;
+      int k = max(2, num_filled_bins);
+
+      num_particles_needed = ((k - 1.0) / (2.0 * kldParams.error)) *
+        pow(1.0 - (2.0 / 9.0*(k - 1.0)) + sqrt(2.0 / 9.0*(k - 1.0))*kldParams.z_score, 3);
+    }
+    numParticles += 1;
+    i += 1;
+
+    continue_condition = ((numParticles < num_particles_needed) ||
+                      (numParticles < kldParams.minParticles)) &&
+      numParticles < kldParams.maxParticles;
+  } while (continue_condition);
+
+  printf("num_bins: %d, numParticles: %d\n", num_filled_bins, numParticles);
+
+  particles = newParticles;
+}
+
 
 void VectorLocalization2D::naiveResample()
 {

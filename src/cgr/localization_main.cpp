@@ -52,7 +52,7 @@ using namespace std;
 bool run = true;
 bool usePointCloud = false;
 bool noLidar = false;
-int numParticles = 100;
+int numParticles = 20;
 int debugLevel = -1;
 
 vector2f initialLoc;
@@ -78,6 +78,7 @@ sensor_msgs::PointCloud filteredPointCloudMsg; /// FSPF point cloud
 VectorLocalization2D::PointCloudParams pointCloudParams;
 VectorLocalization2D::LidarParams lidarParams;
 VectorLocalization2D::MotionModelParams motionParams;
+VectorLocalization2D::KLDParams kldParams;
 
 vector<vector2f> pointCloud;
 vector<vector2f> pointCloudNormals;
@@ -318,8 +319,12 @@ void LoadParameters()
     ConfigReader::SubTree c(config,"kldParams");
 
     bool error = false;
-    error = error || !c.getInt("minParticles",minParticles);
-    error = error || !c.getInt("maxParticles",maxParticles);
+    error = error || !c.getInt("minParticles", kldParams.minParticles);
+    error = error || !c.getInt("maxParticles", kldParams.maxParticles);
+    error = error || !c.getReal("bin_size", kldParams.bin_size);
+    error = error || !c.getReal("angular_bin_size", kldParams.angular_bin_size);
+    error = error || !c.getReal("error",kldParams.error);
+    error = error || !c.getReal("z_score",kldParams.z_score);
 
     if (error) {
       printf("Error Loading KLD Params!\n");
@@ -532,7 +537,8 @@ void lidarCallback(const sensor_msgs::LaserScan &msg)
   if(!noLidar){
     localization->refineLidar(lidarParams);
     localization->updateLidar(lidarParams, motionParams);
-    localization->resample(VectorLocalization2D::LowVarianceResampling);
+    //localization->resample(VectorLocalization2D::LowVarianceResampling);
+    localization->kldResample(kldParams);
     localization->computeLocation(curLoc,curAngle);
   }
 }
@@ -639,7 +645,7 @@ void initialPoseCallback(const geometry_msgs::PoseWithCovarianceStamped &msg)
   vector2f loc(V2COMP(msg.pose.pose.position));
   printf("Initializing CGR localization at %.3f,%.3f, %.2f\u00b0\n",V2COMP(loc), DEG(angle));
   //localization->initialize(numParticles,curMapName.c_str(), loc, angle,sqrt(msg.pose.covariance[0]),sqrt(msg.pose.covariance[35]));
-  localization->initialize(numParticles,curMapName.c_str(), loc, angle,0.01,RAD(1.0));
+  localization->initialize(numParticles,curMapName.c_str(), loc, angle, locUncertainty,RAD(10.0));
 }
 
 int main(int argc, char** argv)
@@ -676,8 +682,8 @@ int main(int argc, char** argv)
 
   if(debugLevel>=0){
     printf("NumParticles     : %d\n",numParticles);
-    printf("minParticles     : %d\n",minParticles);
-    printf("maxParticles     : %d\n",maxParticles);
+    printf("minParticles     : %d\n",kldParams.minParticles);
+    printf("maxParticles     : %d\n",kldParams.maxParticles);
     printf("Alpha1           : %f\n",motionParams.Alpha1);
     printf("Alpha2           : %f\n",motionParams.Alpha2);
     printf("Alpha3           : %f\n",motionParams.Alpha3);

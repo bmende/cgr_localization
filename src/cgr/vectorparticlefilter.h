@@ -137,6 +137,14 @@ public:
     float kernelSize;
   };
 
+  typedef struct {
+    int minParticles;
+    int maxParticles;
+    double bin_size;
+    double angular_bin_size;
+    double error;
+    double z_score;
+  } KLDParams;
 
   typedef struct {
     double lastRunTime;
@@ -248,6 +256,8 @@ public:
   void lowVarianceResample();
   /// Resample particles using naive resampling
   void naiveResample();
+  /// Resample particles until we have enough to maintain KL Distance error
+  void kldResample(VectorLocalization2D::KLDParams kldParams);
   /// Compute the maximum likelihood location based on particle spread
   void computeLocation(vector2f &loc, float &angle);
   /// Returns the current map name
