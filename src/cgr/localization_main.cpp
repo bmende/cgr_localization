@@ -59,8 +59,6 @@ vector2f initialLoc;
 float initialAngle;
 float locUncertainty, angleUncertainty;
 
-int minParticles, maxParticles;
-
 VectorLocalization2D *localization;
 
 using namespace ros;
