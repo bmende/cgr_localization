@@ -16,6 +16,7 @@
 * \file    localization_main.cpp
 * \brief   Main Vector Localization program
 * \author  Joydeep Biswas, (C) 2010
+* \author  Benjamin Mende, 2017
 */
 //========================================================================
 

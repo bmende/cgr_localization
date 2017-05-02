@@ -16,6 +16,7 @@
 \file    vectorparticlefilter.h
 \brief   C++ Implementation: Particle, VectorLocalization
 \author  Joydeep Biswas, (C) 2010-2012
+\author  Benjamin Mende, 2017
 */
 //========================================================================
 
