@@ -643,7 +643,7 @@ void initialPoseCallback(const geometry_msgs::PoseWithCovarianceStamped &msg)
   vector2f loc(V2COMP(msg.pose.pose.position));
   printf("Initializing CGR localization at %.3f,%.3f, %.2f\u00b0\n",V2COMP(loc), DEG(angle));
   //localization->initialize(numParticles,curMapName.c_str(), loc, angle,sqrt(msg.pose.covariance[0]),sqrt(msg.pose.covariance[35]));
-  localization->initialize(numParticles,curMapName.c_str(), loc, angle, locUncertainty,RAD(10.0));
+  localization->initialize(numParticles,curMapName.c_str(), loc, angle,0.01,RAD(1.0));
 }
 
 int main(int argc, char** argv)

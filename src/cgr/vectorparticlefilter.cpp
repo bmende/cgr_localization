@@ -1175,6 +1175,8 @@ void VectorLocalization2D::kldResample(KLDParams kldParams)
       newParticles[i].angle += deltaAngle;
     }
     x += weightIncrement;
+    if (x > totalWeight) x -= totalWeight;
+    if (f > totalWeight) f -= totalWeight;
 
     // now that we have picked a new particle, we need to know if it is in a new bin.
     vector<double> current_bin;
