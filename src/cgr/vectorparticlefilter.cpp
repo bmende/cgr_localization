@@ -1063,7 +1063,6 @@ void VectorLocalization2D::lowVarianceResample()
     if(i<numParticles)
       refinedImportanceWeights += particlesRefined[i].weight;
     else {
-      printf("this happened?\n");
       unrefinedImportanceWeights += particlesRefined[i].weight;
     }
   }
@@ -1112,6 +1111,7 @@ void VectorLocalization2D::lowVarianceResample()
 
 void VectorLocalization2D::kldResample(KLDParams kldParams)
 {
+  const bool debug = false;
   vector<Particle2D> newParticles;
   float totalWeight = 0.0;
   float newWeight = 1.0/float(numParticles);
@@ -1126,7 +1126,6 @@ void VectorLocalization2D::kldResample(KLDParams kldParams)
     if(i<numParticles)
       refinedImportanceWeights += particlesRefined[i].weight;
     else {
-      printf("this happened?\n");
       unrefinedImportanceWeights += particlesRefined[i].weight;
     }
   }
@@ -1203,7 +1202,8 @@ void VectorLocalization2D::kldResample(KLDParams kldParams)
       numParticles < kldParams.maxParticles;
   } while (continue_condition);
 
-  printf("num_bins: %d, numParticles: %d\n", num_filled_bins, numParticles);
+  if (debug)
+    printf("num_bins: %d, numParticles: %d\n", num_filled_bins, numParticles);
 
   particles = newParticles;
 }
