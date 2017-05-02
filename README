@@ -9,7 +9,9 @@ Author: Joydeep Biswas (joydeepb AT ri DOT cmu DOT edu), Brian Coltin (bcoltin A
 Benjamin Mende (bmende AT cs DOT umass DOT edu)
 License: LGPL
 Original source: hg http://hg.cobotrobots.com/cgr_localization
-With KLD on github at: https://github.com/bmende/cgr_localization
+Original Documentation: http://www.cs.cmu.edu/~coral/projects/localization/source.html
+
+With KLD (this!) on github at: https://github.com/bmende/cgr_localization
 
 2. Dependencies
 
@@ -28,7 +30,7 @@ On other platforms, you will have to manually install the following packages:
 
 3. Compiling
 
-Run "make" in the cgr_localization folder OR run "rosmake cgr_localization" after adding the full path of the cgr_localization package to the ROS_PACKAGES_PATH environemt variable.
+Run "make" in the cgr_localization folder OR run "rosmake cgr_localization" after adding the full path of the cgr_localization package to the ROS_PACKAGE_PATH environemt variable.
 
 4. Testing with demo data
 
